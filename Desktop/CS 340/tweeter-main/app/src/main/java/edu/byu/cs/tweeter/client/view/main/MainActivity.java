@@ -27,14 +27,14 @@ import edu.byu.cs.tweeter.model.domain.User;
 /**
  * The main activity for the application. Contains tabs for feed, story, following, and followers.
  */
-public class MainActivity extends AppCompatActivity implements StatusDialogFragment.Observer, MainPresenter.View {
+public class MainActivity extends AppCompatActivity implements StatusDialogFragment.Observer, MainPresenter.MainView {
 
     private static final String LOG_TAG = "MainActivity";
 
     public static final String CURRENT_USER_KEY = "CurrentUser";
 
-    private Toast logOutToast;
-    private Toast postingToast;
+//    private Toast logOutToast;
+    private Toast currToast;
     private User selectedUser;
     private TextView followeeCount;
     private TextView followerCount;
@@ -110,7 +110,8 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
 
     @Override
     public void displayMessage(String message) {
-        Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+        currToast = Toast.makeText(this, message, Toast.LENGTH_LONG);
+        currToast.show();
     }
 
     @Override
@@ -119,7 +120,6 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
             followButton.setVisibility(View.VISIBLE);
         }else {
             followButton.setVisibility(View.GONE);
-
         }
     }
 
@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
 
     @Override
     public void setFollowingCount(String count) {
-        followeeCount.setText(getString(R.string.followerCount, count));
+        followeeCount.setText(getString(R.string.followeeCount, count));
     }
 
     @Override
@@ -160,14 +160,14 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
     }
 
     @Override
-    public void clearInfoMessage() {
-        if (logOutToast != null) {
-            logOutToast.cancel();
-            logOutToast = null;
+    public void clearMessage() {
+        if (currToast != null) {
+            currToast.cancel();
+            currToast = null;
         }
-        if (postingToast != null) {
-            postingToast.cancel();
-        }
+//        if (postingToast != null) {
+//            postingToast.cancel();
+//        }
     }
 
     @Override
@@ -179,17 +179,17 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
         startActivity(intent);
     }
 
-    @Override
-    public void setPostingToastText(String message) {
-        postingToast = Toast.makeText(this, message, Toast.LENGTH_LONG);
-        postingToast.show();
-    }
+//    @Override
+//    public void setToastText(String message) {
+//        currToast = Toast.makeText(this, message, Toast.LENGTH_LONG);
+//        currToast.show();
+//    }
 
-    @Override
-    public void displayLogoutMessage(String message) {
-        logOutToast = Toast.makeText(this, message, Toast.LENGTH_LONG);
-        logOutToast.show();
-    }
+//    @Override
+//    public void displayLogoutMessage(String message) {
+//        logOutToast = Toast.makeText(this, message, Toast.LENGTH_LONG);
+//        logOutToast.show();
+//    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -209,24 +209,18 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
         }
     }
 
-
-
     @Override
     public void onStatusPosted(String post) {
         presenter.makePost(post);
-
     }
-
-
-
-
 
     public void updateSelectedUserFollowingAndFollowers() {
         presenter.updateFollowingFollowers(selectedUser);
-
     }
 
 
-
-
+    @Override
+    public void displayErrorMessage(String message) {
+        displayMessage(message);
+    }
 }
