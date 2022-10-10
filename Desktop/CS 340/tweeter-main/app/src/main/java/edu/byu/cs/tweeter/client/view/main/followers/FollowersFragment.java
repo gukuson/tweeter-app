@@ -1,6 +1,7 @@
 package edu.byu.cs.tweeter.client.view.main.followers;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -24,13 +25,14 @@ import java.util.List;
 
 import edu.byu.cs.client.R;
 import edu.byu.cs.tweeter.client.presenter.FollowersPresenter;
+import edu.byu.cs.tweeter.client.presenter.PagedPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
 
 /**
  * Implements the "Followers" tab.
  */
-public class FollowersFragment extends Fragment implements FollowersPresenter.View{
+public class FollowersFragment extends Fragment implements PagedPresenter.PagedView<User> {
 
     private static final String LOG_TAG = "FollowersFragment";
     private static final String USER_KEY = "UserKey";
@@ -87,7 +89,17 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
     }
 
     @Override
-    public void displayInfoMessage(String message) {
+    public void addItems(List<User> items) {
+        followersRecyclerViewAdapter.addItems(items);
+    }
+
+    @Override
+    public void displayErrorMessage(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void displayMessage(String message) {
         Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
     }
 
@@ -101,14 +113,15 @@ public class FollowersFragment extends Fragment implements FollowersPresenter.Vi
     }
 
     @Override
-    public void addFollowers(List<User> followers) {
-        followersRecyclerViewAdapter.addItems(followers);
-    }
-
-    @Override
     public void goToUser(User user) {
         Intent intent = new Intent(getContext(), MainActivity.class);
         intent.putExtra(MainActivity.CURRENT_USER_KEY, user);
+        startActivity(intent);
+    }
+
+    @Override
+    public void openHttp(Uri parse) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, parse);
         startActivity(intent);
     }
 

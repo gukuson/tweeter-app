@@ -1,10 +1,8 @@
 package edu.byu.cs.tweeter.client.view.main.following;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,20 +21,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import edu.byu.cs.client.R;
-import edu.byu.cs.tweeter.client.backgroundTask.GetUserTask;
-import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
+import edu.byu.cs.tweeter.client.presenter.PagedPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
 
 /**
  * Implements the "Following" tab.
  */
-public class FollowingFragment extends Fragment implements FollowingPresenter.View {
+public class FollowingFragment extends Fragment implements PagedPresenter.PagedView<User> {
 
     private static final String LOG_TAG = "FollowingFragment";
     private static final String USER_KEY = "UserKey";
@@ -92,7 +87,25 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
     }
 
     @Override
-    public void displayInfoMessage(String message) {
+    public void openHttp(Uri parse) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, parse);
+        startActivity(intent);
+    }
+
+
+    @Override
+    public void addItems(List<User> items) {
+        followingRecyclerViewAdapter.addItems(items);
+    }
+
+
+    @Override
+    public void displayErrorMessage(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void displayMessage(String message) {
         Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
     }
 
@@ -103,11 +116,6 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
         } else {
             followingRecyclerViewAdapter.removeLoadingFooter();
         }
-    }
-
-    @Override
-    public void addFollowees(List<User> followees) {
-        followingRecyclerViewAdapter.addItems(followees);
     }
 
     @Override

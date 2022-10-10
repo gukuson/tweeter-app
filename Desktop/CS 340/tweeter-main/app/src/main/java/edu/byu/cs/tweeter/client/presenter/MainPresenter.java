@@ -16,15 +16,23 @@ import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.StatusService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
+import edu.byu.cs.tweeter.client.model.service.observer.GetCountObserver;
+import edu.byu.cs.tweeter.client.model.service.observer.ServiceObserver;
+import edu.byu.cs.tweeter.client.model.service.observer.SimpleNotificationObserver;
+import edu.byu.cs.tweeter.client.view.View;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class MainPresenter {
+public class MainPresenter extends Presenter<MainPresenter.MainView> {
 
     private static final String LOG_TAG = "MainPresenter";
+    private final FollowService followService = new FollowService();
 
-    public interface View {
-        void displayMessage(String message);
+    public MainPresenter(MainView view) {
+        super(view);
+    }
+
+    public interface MainView extends View {
         void setFollowButtonVisibility(boolean isVisble);
         void setFollowButtonText(int following);
         void showIsFollowing();
@@ -33,31 +41,28 @@ public class MainPresenter {
         void setFollowingCount(String count);
         void updateFollowingFollowers();
         void setFollowButtonEnabled(boolean value);
-
-        void clearInfoMessage();
-
         void goToLogin();
-
-        void setPostingToastText(String message);
-
-        void displayLogoutMessage(String message);
+        void clearMessage();
     }
 
-    private View view;
-    private FollowService followService;
+    public abstract class SimpleFailObserver implements ServiceObserver {
+        @Override
+        public void handleFailure(String message) {
+            view.displayMessage(failString(getDescription()) + message);
+        }
 
-    public MainPresenter(View view) {
-        this.view = view;
-        followService = new FollowService();
+        @Override
+        public void handleException(Exception exception) {
+            view.displayMessage(exceptionString(getDescription()) + exception.getMessage());
+        }
+
+        public abstract String getDescription();
     }
-
 
     public void makePost(String post) {
-        view.setPostingToastText("Posting Status...");
-
+        view.displayMessage("Posting Status...");
         try {
             Status newStatus = new Status(post, Cache.getInstance().getCurrUser(), getFormattedDateTime(), parseURLs(post), parseMentions(post));
-
             new StatusService().postStatus(Cache.getInstance().getCurrUserAuthToken(),
                     newStatus, new MakePostObserver());
 
@@ -67,36 +72,36 @@ public class MainPresenter {
         }
     }
 
-    private class MakePostObserver implements StatusService.MakePostObserver {
+    public class MakePostObserver extends SimpleFailObserver implements SimpleNotificationObserver {
 
         @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
+        public String getDescription() {
+            return "make post";
         }
 
         @Override
-        public void cancelPostingToast() {
-            view.clearInfoMessage();
+        public void handleSuccess() {
+            view.clearMessage();
+            view.displayMessage("Successfully Posted!");
         }
     }
 
     public void logout() {
-        view.displayLogoutMessage("Logging Out...");
+        view.displayMessage("Logging Out...");
         new UserService().logout(Cache.getInstance().getCurrUserAuthToken(), new LogoutObserver());
-
     }
 
-    private class LogoutObserver implements UserService.LogoutObserver{
+    private class LogoutObserver extends SimpleFailObserver implements SimpleNotificationObserver{
 
         @Override
-        public void logoutSuccess() {
-            view.clearInfoMessage();
-            logoutUser();
+        public String getDescription() {
+            return "logout";
         }
 
         @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
+        public void handleSuccess() {
+            view.clearMessage();
+            logoutUser();
         }
     }
 
@@ -113,35 +118,94 @@ public class MainPresenter {
         // Get count of most recently selected user's followers.
         followService.getFollowersCount(Cache.getInstance().getCurrUserAuthToken(), selectedUser, executor, new GetFollowersCountObserver());
 
-
         // Get count of most recently selected user's followees (who they are following)
         followService.getFollowingCount(Cache.getInstance().getCurrUserAuthToken(), selectedUser, executor, new GetFollowingCountObserver());
-
     }
 
-    private class GetFollowersCountObserver implements FollowService.GetFollowersCountObserver {
+    private abstract class GetFollowersFollowingObserver extends SimpleFailObserver implements GetCountObserver {
+        @Override
+        public void setCount(String count) {
+            setFollowCount(count);
+        }
+
+        protected abstract void setFollowCount(String count);
+    }
+
+    private class GetFollowersCountObserver extends GetFollowersFollowingObserver {
 
         @Override
-        public void setFollowerCount(String count) {
+        public String getDescription() {
+            return "get followers count";
+        }
+
+        @Override
+        protected void setFollowCount(String count) {
             view.setFollowerCount(count);
         }
-
-        @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
-        }
     }
 
-    private class GetFollowingCountObserver implements FollowService.GetFollowingCountObserver {
+    private class GetFollowingCountObserver extends GetFollowersFollowingObserver {
 
         @Override
-        public void setFollowingCount(String count) {
+        public String getDescription() {
+            return "get following count";
+        }
+
+        @Override
+        public void setFollowCount(String count) {
             view.setFollowingCount(count);
         }
 
+    }
+
+    private abstract class FollowButtonObserver implements SimpleNotificationObserver {
+
         @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
+        public void handleFailure(String message) {
+            view.displayMessage(failString(getDescription()) + message);
+            view.setFollowButtonEnabled(true);
+        }
+
+        @Override
+        public void handleException(Exception exception) {
+            view.displayMessage(exceptionString(getDescription()) + exception.getMessage());
+            view.setFollowButtonEnabled(true);
+        }
+
+        @Override
+        public void handleSuccess() {
+            view.updateFollowingFollowers();
+            startUpdateFollowButton();
+            view.setFollowButtonEnabled(true);
+        }
+
+        protected abstract String getDescription();
+        protected abstract void startUpdateFollowButton();
+    }
+
+    private class UnfollowObserver extends FollowButtonObserver {
+
+        @Override
+        protected String getDescription() {
+            return "unfollow";
+        }
+
+        @Override
+        protected void startUpdateFollowButton() {
+            updateFollowButton(true);
+        }
+    }
+
+    private class FollowObserver extends FollowButtonObserver {
+
+        @Override
+        protected String getDescription() {
+            return "follow";
+        }
+
+        @Override
+        protected void startUpdateFollowButton() {
+            updateFollowButton(false);
         }
     }
 
@@ -159,35 +223,6 @@ public class MainPresenter {
         }
     }
 
-    private class UnfollowObserver implements FollowService.UnfollowObserver {
-        public void unfollowSuccess() {
-            view.updateFollowingFollowers();
-            updateFollowButton(true);
-            view.setFollowButtonEnabled(true);
-        }
-
-        @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
-            view.setFollowButtonEnabled(true);
-        }
-    }
-
-    private class FollowObserver implements FollowService.FollowObserver {
-
-        @Override
-        public void followSuccess() {
-            view.updateFollowingFollowers();
-            updateFollowButton(false);
-            view.setFollowButtonEnabled(true);
-        }
-
-        @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
-            view.setFollowButtonEnabled(true);
-        }
-    }
     public void updateFollowButton(boolean removed) {
         // If follow relationship was removed.
         if (removed) {
@@ -210,28 +245,27 @@ public class MainPresenter {
         }
     }
 
-    private class IsFollowerObserver implements FollowService.IsFollowerObserver {
+    public class IsFollowerObserver extends SimpleFailObserver implements ServiceObserver {
+
+//        private final String description = "determine following relationship";
 
         @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
+        public String getDescription() {
+            return "determine following relationship";
         }
 
-        @Override
         public void isFollowing() {
             view.setFollowButtonText(R.string.following);
             view.showIsFollowing();
         }
 
-        @Override
         public void notFollowing() {
             view.setFollowButtonText(R.string.follow);
             view.showNotFollowing();
-
         }
 
-
     }
+
     public String getFormattedDateTime() throws ParseException {
         SimpleDateFormat userFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         SimpleDateFormat statusFormat = new SimpleDateFormat("MMM d yyyy h:mm aaa");
