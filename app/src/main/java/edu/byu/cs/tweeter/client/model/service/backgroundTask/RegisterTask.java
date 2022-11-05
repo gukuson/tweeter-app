@@ -44,12 +44,6 @@ public class RegisterTask extends AuthenticateTask {
         this.image = image;
     }
 
-//    @Override
-//    protected Pair<User, AuthToken> runAuthenticationTask() {
-//        User registeredUser = getFakeData().getFirstUser();
-//        AuthToken authToken = getFakeData().getAuthToken();
-//        return new Pair<>(registeredUser, authToken);
-//    }
 
     @Override
     protected AuthenticateResponse sendServerRequest() throws IOException, TweeterRemoteException {

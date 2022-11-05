@@ -30,26 +30,6 @@ public class PostStatusTask extends SimpleAuthenticatedTask {
         this.status = status;
     }
 
-//    @Override
-//    protected void runTask() {
-//        // We could do this from the presenter, without a task and handler, but we will
-//        // eventually access the database from here when we aren't using dummy data.
-//
-//        try {
-//            PostStatusRequest request = new PostStatusRequest(getAuthToken(), status);
-//            Response response = getServerFacade().postStatus(request, URL_PATH);
-//
-//            if (response.isSuccess()) {
-//                sendSuccessMessage();
-//            } else {
-//                sendFailedMessage(response.getMessage());
-//            }
-//        } catch (Exception ex) {
-//            Log.e(LOG_TAG, ex.getMessage(), ex);
-//            sendExceptionMessage(ex);
-//        }
-//    }
-
     @Override
     protected Response sendServerRequest() throws IOException, TweeterRemoteException {
         PostStatusRequest request = new PostStatusRequest(getAuthToken(), status);
