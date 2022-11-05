@@ -1,6 +1,7 @@
 package edu.byu.cs.tweeter.client.model.service.backgroundTask;
 
 import android.os.Handler;
+import android.util.Log;
 
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
@@ -17,6 +18,11 @@ public class FollowTask extends AuthenticatedTask {
     public FollowTask(AuthToken authToken, User followee, Handler messageHandler) {
         super(authToken, messageHandler);
         this.followee = followee;
+    }
+
+    @Override
+    protected void logException(Exception ex) {
+        Log.e(GENERIC_LOG_TAG, ex.getMessage(), ex);
     }
 
     @Override

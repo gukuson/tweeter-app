@@ -4,21 +4,18 @@ import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
-import java.util.List;
 
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
-import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
 import edu.byu.cs.tweeter.model.net.request.StoryRequest;
 import edu.byu.cs.tweeter.model.net.response.PagedResponse;
-import edu.byu.cs.tweeter.util.Pair;
 
 /**
  * Background task that retrieves a page of statuses from a user's story.
  */
-public class GetStoryTask extends NewPagedTask<Status> {
+public class GetStoryTask extends PagedTask<Status> {
 
     private static final String LOG_TAG = "GetStoryTask";
     public static final String URL_PATH = "/getstory";

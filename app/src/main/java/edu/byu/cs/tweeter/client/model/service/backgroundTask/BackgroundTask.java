@@ -8,10 +8,11 @@ import android.util.Log;
 import java.io.IOException;
 
 import edu.byu.cs.tweeter.client.model.net.ServerFacade;
+import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
 import edu.byu.cs.tweeter.util.FakeData;
 
 public abstract class BackgroundTask implements Runnable {
-    private static final String LOG_TAG = "BackgroundTask";
+    protected static final String GENERIC_LOG_TAG = "BackgroundTask";
 
     public static final String SUCCESS_KEY = "success";
     public static final String MESSAGE_KEY = "message";
@@ -33,13 +34,15 @@ public abstract class BackgroundTask implements Runnable {
     public void run() {
         try {
             runTask();
-        } catch (Exception ex) {
-            Log.e(LOG_TAG, ex.getMessage(), ex);
+        } catch (IOException | TweeterRemoteException ex) {
+            logException(ex);
             sendExceptionMessage(ex);
         }
     }
 
-    protected abstract void runTask() throws IOException;
+    protected abstract void logException(Exception ex);
+
+    protected abstract void runTask() throws IOException, TweeterRemoteException;
 
     protected FakeData getFakeData() {
         return FakeData.getInstance();

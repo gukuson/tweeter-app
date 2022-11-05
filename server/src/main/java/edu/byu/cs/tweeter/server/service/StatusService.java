@@ -8,20 +8,34 @@ import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FeedRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
+import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.request.StoryRequest;
 import edu.byu.cs.tweeter.model.net.response.FeedResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
+import edu.byu.cs.tweeter.model.net.response.Response;
 import edu.byu.cs.tweeter.model.net.response.StoryResponse;
 import edu.byu.cs.tweeter.util.FakeData;
 import edu.byu.cs.tweeter.util.Pair;
 
 public class StatusService {
 
+
+    public Response postStatus(PostStatusRequest request) {
+        if(request.getNewStatus() == null) {
+            throw new RuntimeException("[Bad Request] Request needs to have a status");
+        } else if (request.getAuthToken() == null) {
+            throw new RuntimeException("[Bad Request] Request to post status needs to have a an authtoken");
+        }
+        return new Response(true);
+    }
+
     public StoryResponse getStory(StoryRequest request) {
         if(request.getFollowerAlias() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a user alias");
         } else if(request.getLimit() <= 0) {
-            throw new RuntimeException("[Bad Request] Request following needs to have a positive limit");
+            throw new RuntimeException("[Bad Request] Request for story needs to have a positive limit");
+        }else if (request.getAuthToken() == null) {
+            throw new RuntimeException("[Bad Request] Request to get story needs to have a an authtoken");
         }
 
         Pair<List<Status>, Boolean> pagedOfStatuses = getPageOfStatus(request.getLastStatusUserAlias(), request.getDate(), request.getLimit());
@@ -33,7 +47,9 @@ public class StatusService {
         if(request.getFollowerAlias() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a user alias");
         } else if(request.getLimit() <= 0) {
-            throw new RuntimeException("[Bad Request] Request following needs to have a positive limit");
+            throw new RuntimeException("[Bad Request] Request for feed needs to have a positive limit");
+        }else if (request.getAuthToken() == null) {
+            throw new RuntimeException("[Bad Request] Request to get feed needs to have a an authtoken");
         }
 
         Pair<List<Status>, Boolean> pagedOfStatuses = getPageOfStatus(request.getLastStatusUserAlias(), request.getDate(), request.getLimit());
@@ -74,4 +90,5 @@ public class StatusService {
     List<Status> getDummyStatuses() {
         return getFakeData().getFakeStatuses();
     }
+
 }

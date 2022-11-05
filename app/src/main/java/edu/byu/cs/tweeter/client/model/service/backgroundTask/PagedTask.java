@@ -11,7 +11,6 @@ import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
 import edu.byu.cs.tweeter.model.net.response.PagedResponse;
-import edu.byu.cs.tweeter.util.Pair;
 
 public abstract class PagedTask<T> extends AuthenticatedTask {
 
@@ -66,22 +65,21 @@ public abstract class PagedTask<T> extends AuthenticatedTask {
     }
 
     @Override
-    protected final void runTask() throws IOException {
-        Pair<List<T>, Boolean> pageOfItems = getItems();
+    protected final void runTask() throws IOException, TweeterRemoteException {
+        PagedResponse<T> response = sendRequestToServer();
 
-        items = pageOfItems.getFirst();
-        hasMorePages = pageOfItems.getSecond();
-
-        // Call sendSuccessMessage if successful
-        sendSuccessMessage();
-        // or call sendFailedMessage if not successful
-        // sendFailedMessage()
+        if (response.isSuccess()) {
+            this.items = response.getItems();
+            this.hasMorePages = response.getHasMorePages();
+            sendSuccessMessage();
+        } else {
+            sendFailedMessage(response.getMessage());
+        }
     }
 
+    protected abstract PagedResponse<T> sendRequestToServer() throws IOException, TweeterRemoteException;
 
-    protected abstract Pair<List<T>, Boolean> getItems();
-
-    protected abstract List<User> getUsersForItems(List<T> items);
+//    protected abstract List<User> getUsersForItems(List<T> items);
 
     @Override
     protected final void loadSuccessBundle(Bundle msgBundle) {

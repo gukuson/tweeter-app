@@ -2,6 +2,7 @@ package edu.byu.cs.tweeter.client.model.service.backgroundTask;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 
 import java.util.Random;
 
@@ -31,6 +32,11 @@ public class IsFollowerTask extends AuthenticatedTask {
         super(authToken, messageHandler);
         this.follower = follower;
         this.followee = followee;
+    }
+
+    @Override
+    protected void logException(Exception ex) {
+        Log.e(GENERIC_LOG_TAG, ex.getMessage(), ex);
     }
 
     @Override

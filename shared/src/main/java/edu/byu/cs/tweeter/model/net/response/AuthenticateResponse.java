@@ -12,6 +12,8 @@ public class AuthenticateResponse extends Response {
     private User user;
     private AuthToken authToken;
 
+
+    public AuthenticateResponse() {}
     /**
      * Creates a response indicating that the corresponding request was unsuccessful.
      *
@@ -49,5 +51,13 @@ public class AuthenticateResponse extends Response {
      */
     public AuthToken getAuthToken() {
         return authToken;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public void setAuthToken(AuthToken authToken) {
+        this.authToken = authToken;
     }
 }

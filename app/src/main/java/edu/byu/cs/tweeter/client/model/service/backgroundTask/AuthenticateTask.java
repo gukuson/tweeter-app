@@ -43,39 +43,17 @@ public abstract class AuthenticateTask extends BackgroundTask {
 
 
     @Override
-    protected final void runTask()  throws IOException {
-//        try {
-//            PagedResponse<T> response = sendRequestToServer();
-//
-//            if (response.isSuccess()) {
-//                this.items = response.getItems();
-//                this.hasMorePages = response.getHasMorePages();
-//                sendSuccessMessage();
-//            } else {
-//                sendFailedMessage(response.getMessage());
-//            }
-//        } catch (IOException | TweeterRemoteException ex) {
-//            logException(ex);
-//            sendExceptionMessage(ex);
-//        }
-        try {
+    protected final void runTask() throws IOException, TweeterRemoteException {
+        AuthenticateResponse response = sendServerRequest();
 
-//            LoginRequest request = new LoginRequest(username, password);
-//            AuthenticateResponse response = getServerFacade().login(request, UserService.URL_PATH);
-
-            AuthenticateResponse response = sendServerRequest();
-
-            if (response.isSuccess()) {
-                this.authenticatedUser = response.getUser();
-                this.authToken = response.getAuthToken();
-                sendSuccessMessage();
-            } else {
-                sendFailedMessage(response.getMessage());
-            }
-        } catch (Exception ex) {
-            logException(ex);
-            sendExceptionMessage(ex);
+        if (response.isSuccess()) {
+            this.authenticatedUser = response.getUser();
+            this.authToken = response.getAuthToken();
+            sendSuccessMessage();
+        } else {
+            sendFailedMessage(response.getMessage());
         }
+    }
 //        Pair<User, AuthToken> loginResult = runAuthenticationTask();
 //
 //        authenticatedUser = loginResult.getFirst();
@@ -85,12 +63,10 @@ public abstract class AuthenticateTask extends BackgroundTask {
 //        sendSuccessMessage();
 //        // or call sendFailedMessage if not successful
 //        // sendFailedMessage()
-    }
+//    }
 
 //    protected abstract Pair<User, AuthToken> runAuthenticationTask();
     protected abstract AuthenticateResponse sendServerRequest() throws IOException, TweeterRemoteException;
-
-    protected abstract void logException(Exception ex);
 
     @Override
     protected void loadSuccessBundle(Bundle msgBundle) {

@@ -17,6 +17,7 @@ import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 
 public class UserService {
+
     public void logout(AuthToken currUserAuthToken, SimpleNotificationObserver observer) {
         LogoutTask logoutTask = new LogoutTask(currUserAuthToken, new SimpleNotificationHandler(observer));
         BackgroundTaskUtils.runTask(logoutTask);
