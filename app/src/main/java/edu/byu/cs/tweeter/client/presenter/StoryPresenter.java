@@ -13,11 +13,15 @@ public class StoryPresenter extends PagedPresenter<Status>{
     @Override
     public void getItems(AuthToken currUserAuthToken, User user, int pageSize, Status lastItem) {
         new StatusService().getStory(currUserAuthToken, user,
-                pageSize, lastItem, new PagedObserver());
+                pageSize, lastItem, getPagedObserver());
     }
 
     @Override
     public String getDescription() {
         return "get story";
+    }
+
+    public PagedObserver getPagedObserver() {
+        return new PagedObserver();
     }
 }
