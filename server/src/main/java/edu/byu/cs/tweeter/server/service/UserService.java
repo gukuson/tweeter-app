@@ -10,9 +10,17 @@ import edu.byu.cs.tweeter.model.net.response.AuthenticateResponse;
 import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
 import edu.byu.cs.tweeter.model.net.response.LoginResponse;
 import edu.byu.cs.tweeter.model.net.response.Response;
+import edu.byu.cs.tweeter.server.dao.DAOFactory;
+import edu.byu.cs.tweeter.server.dao.IUserDAO;
 import edu.byu.cs.tweeter.util.FakeData;
 
-public class UserService {
+public class UserService extends Service{
+    IUserDAO userDAO;
+
+    public UserService(DAOFactory daoFactory) {
+        super(daoFactory);
+        userDAO = daoFactory.getUserDao();
+    }
 
     public LoginResponse login(LoginRequest request) {
         if(request.getUsername() == null){
@@ -47,10 +55,19 @@ public class UserService {
             throw new RuntimeException("[Bad Request] Missing an image");
         }
 
-        // TODO: Generates dummy data. Replace with a real implementation.
-        User user = getDummyUser();
+        System.out.println("Before getting the userDAO register user");
+
+        User user = userDAO.registerUser(request.getUsername(), request.getPassword(), request.getFirstName(), request.getLastName(), request.getImage());
         AuthToken authToken = getDummyAuthToken();
-        return new AuthenticateResponse(user, authToken);
+        if (user == null) {
+            return new AuthenticateResponse("Failed to register user, user already created");
+        }else {
+            return new AuthenticateResponse(user, authToken);
+        }
+        // TODO: Generates dummy data. Replace with a real implementation.
+//        User user = getDummyUser();
+//        AuthToken authToken = getDummyAuthToken();
+//        return new AuthenticateResponse(user, authToken);
     }
 
     public GetUserResponse getUser(GetUserRequest request) {
