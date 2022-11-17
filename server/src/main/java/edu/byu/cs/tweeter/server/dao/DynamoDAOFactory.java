@@ -10,4 +10,9 @@ public class DynamoDAOFactory implements DAOFactory{
     public IUserDAO getUserDao() {
         return new DynamoUserDAO();
     }
+
+    @Override
+    public IAuthtokenDAO getAuthtokenDao() {
+        return new DynamoAuthtokenDAO();
+    }
 }

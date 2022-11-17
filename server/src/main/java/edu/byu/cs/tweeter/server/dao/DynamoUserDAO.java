@@ -9,7 +9,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Base64;
+import java.util.Objects;
 
+import edu.byu.cs.tweeter.model.net.request.LoginRequest;
+import edu.byu.cs.tweeter.model.net.response.LoginResponse;
 import edu.byu.cs.tweeter.server.beans.User;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
@@ -43,7 +46,7 @@ public class DynamoUserDAO extends DynamoDAO implements IUserDAO{
     }
 
     @Override
-    public edu.byu.cs.tweeter.model.domain.User registerUser(String username, String password, String firstName, String lastName, String image) {
+    public edu.byu.cs.tweeter.model.domain.User registerUser(String username, String hashedPassword, String firstName, String lastName, String image) {
         Key key = Key.builder()
                 .partitionValue(username)
                 .build();
@@ -58,8 +61,7 @@ public class DynamoUserDAO extends DynamoDAO implements IUserDAO{
 
             User newUser = new User();
             newUser.setUser_alias(username);
-//            TODO: Need to hash password
-            newUser.setPassword(password);
+            newUser.setPassword(hashedPassword);
             newUser.setFirstname(firstName);
             newUser.setLastname(lastName);
             newUser.setImage_url(imageUrl.toString());
@@ -68,4 +70,24 @@ public class DynamoUserDAO extends DynamoDAO implements IUserDAO{
             return new edu.byu.cs.tweeter.model.domain.User(firstName, lastName, username, imageUrl.toString());
         }
     }
+
+    @Override
+    public LoginResponse login(LoginRequest request) {
+        Key key = Key.builder()
+                .partitionValue(request.getUsername())
+                .build();
+
+        // see if user already exists
+        User user = table.getItem(key);
+        if (user != null) {
+//            Correct username, then check password, create model user to return as well as authtoken to be created later
+            if (Objects.equals(user.getPassword(), request.getPassword())) {
+                edu.byu.cs.tweeter.model.domain.User modelUser = new edu.byu.cs.tweeter.model.domain.User(user.getFirstname(), user.getLastname(), user.getUser_alias(), user.getImage_url());
+                return new LoginResponse(modelUser, null);
+            }
+        }
+        return new LoginResponse("Incorrect username or password");
+    }
+
+
 }

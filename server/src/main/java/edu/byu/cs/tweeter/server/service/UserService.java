@@ -1,5 +1,8 @@
 package edu.byu.cs.tweeter.server.service;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.GetUserRequest;
@@ -11,15 +14,35 @@ import edu.byu.cs.tweeter.model.net.response.GetUserResponse;
 import edu.byu.cs.tweeter.model.net.response.LoginResponse;
 import edu.byu.cs.tweeter.model.net.response.Response;
 import edu.byu.cs.tweeter.server.dao.DAOFactory;
+import edu.byu.cs.tweeter.server.dao.IAuthtokenDAO;
 import edu.byu.cs.tweeter.server.dao.IUserDAO;
 import edu.byu.cs.tweeter.util.FakeData;
 
 public class UserService extends Service{
     IUserDAO userDAO;
+    IAuthtokenDAO authtokenDAO;
 
     public UserService(DAOFactory daoFactory) {
         super(daoFactory);
         userDAO = daoFactory.getUserDao();
+        authtokenDAO = daoFactory.getAuthtokenDao();
+    }
+
+
+    private String hashPassword(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(password.getBytes());
+            byte[] bytes = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte aByte : bytes) {
+                sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return "FAILED TO HASH";
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -29,10 +52,21 @@ public class UserService extends Service{
             throw new RuntimeException("[Bad Request] Missing a password");
         }
 
-        // TODO: Generates dummy data. Replace with a real implementation.
-        User user = getDummyUser();
-        AuthToken authToken = getDummyAuthToken();
-        return new LoginResponse(user, authToken);
+        String hashedPassword = hashPassword(request.getPassword());
+        request.setPassword(hashedPassword);
+
+        LoginResponse response = userDAO.login(request);
+
+        if (response.isSuccess()) {
+//            Create authtoken
+            AuthToken authToken = authtokenDAO.createAuthtoken();
+            response.setAuthToken(authToken);
+        }
+        return response;
+//        // TODO: Generates dummy data. Replace with a real implementation.
+//        User user = getDummyUser();
+//        AuthToken authToken = getDummyAuthToken();
+//        return new LoginResponse(user, authToken);
     }
 
     public Response logout(LogoutRequest request) {
@@ -57,11 +91,14 @@ public class UserService extends Service{
 
         System.out.println("Before getting the userDAO register user");
 
-        User user = userDAO.registerUser(request.getUsername(), request.getPassword(), request.getFirstName(), request.getLastName(), request.getImage());
-        AuthToken authToken = getDummyAuthToken();
+        String hashedPassword = hashPassword(request.getPassword());
+        User user = userDAO.registerUser(request.getUsername(), hashedPassword, request.getFirstName(), request.getLastName(), request.getImage());
+
         if (user == null) {
-            return new AuthenticateResponse("Failed to register user, user already created");
+            return new AuthenticateResponse("Failed to register user, try a different alias/username");
         }else {
+//          Create new authtoken and put in db
+            AuthToken authToken = authtokenDAO.createAuthtoken();
             return new AuthenticateResponse(user, authToken);
         }
         // TODO: Generates dummy data. Replace with a real implementation.
@@ -69,6 +106,7 @@ public class UserService extends Service{
 //        AuthToken authToken = getDummyAuthToken();
 //        return new AuthenticateResponse(user, authToken);
     }
+
 
     public GetUserResponse getUser(GetUserRequest request) {
         if(request.getClickedAlias() == null){
