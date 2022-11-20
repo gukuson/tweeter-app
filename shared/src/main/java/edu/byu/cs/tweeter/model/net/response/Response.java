@@ -10,13 +10,16 @@ public class Response implements Serializable {
     private boolean success;
     private String message;
 
+    public Response() {}
+
     /**
      * Creates an instance with a null message.
      *
      * @param success the success message.
      */
     public Response(boolean success) {
-        this(success, null);
+        this.success = success;
+        this.message = null;
     }
 
     /**
@@ -30,7 +33,7 @@ public class Response implements Serializable {
         this.message = message;
     }
 
-    public Response() {}
+
 
     /**
      * Indicates whether the response represents a successful result.

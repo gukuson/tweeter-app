@@ -7,6 +7,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 public class Authtoken {
     private String token;
     private long timestamp;
+    private String user_alias;
+
 
     @DynamoDbPartitionKey
     public String getToken() {
@@ -23,5 +25,13 @@ public class Authtoken {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getUser_alias() {
+        return user_alias;
+    }
+
+    public void setUser_alias(String user_alias) {
+        this.user_alias = user_alias;
     }
 }

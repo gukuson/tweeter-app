@@ -1,17 +1,12 @@
 package edu.byu.cs.tweeter.model.net.response;
 
-import edu.byu.cs.tweeter.model.domain.AuthToken;
-import edu.byu.cs.tweeter.model.domain.User;
-import edu.byu.cs.tweeter.model.net.request.LoginRequest;
-
-/**
- * A response for a {@link LoginRequest}.
- */
 public class IsFollowerResponse extends Response {
 
-    private boolean isFollower;
+    private boolean follower;
 
-    public IsFollowerResponse() {}
+    public IsFollowerResponse() {
+        super();
+    }
     /**
      * Creates a response indicating that the corresponding request was unsuccessful.
      *
@@ -24,18 +19,18 @@ public class IsFollowerResponse extends Response {
     /**
      * Creates a response indicating that the corresponding request was successful.
      *
-     * @param isFollower if the person follows the user
+     * @param isFollowing if the currUser follows the selected user
      */
-    public IsFollowerResponse(boolean isFollower) {
+    public IsFollowerResponse(boolean isFollowing) {
         super(true, null);
-        this.isFollower = isFollower;
+        this.follower = isFollowing;
     }
 
     public boolean isFollower() {
-        return isFollower;
+        return follower;
     }
 
     public void setFollower(boolean follower) {
-        isFollower = follower;
+        this.follower = follower;
     }
 }

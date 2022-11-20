@@ -1,159 +1,334 @@
 package edu.byu.cs.tweeter.server.dao;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import edu.byu.cs.tweeter.model.domain.User;
-import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
-import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
-import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
-import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
-import edu.byu.cs.tweeter.util.FakeData;
+import edu.byu.cs.tweeter.model.net.request.GetFollowRequest;
+import edu.byu.cs.tweeter.server.beans.Follower;
+import edu.byu.cs.tweeter.util.Pair;
+import software.amazon.awssdk.core.pagination.sync.SdkIterable;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-/**
- * A DAO for accessing 'following' data from the database.
- */
 public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
 
-    /**
-     * Gets the count of users from the database that the user specified is following. The
-     * current implementation uses generated data and doesn't actually access a database.
-     *
-     * @param follower the User whose count of how many following is desired.
-     * @return said count.
-     */
-    public Integer getFolloweeCount(User follower) {
-        // TODO: uses the dummy data.  Replace with a real implementation.
-        assert follower != null;
-        return getDummyUsers().size();
+    private static final String TableName = "follows";
+    public static final String IndexName = "follows_index";
+
+    private static final String FollowerAttr = "follower_handle";
+    private static final String FolloweeAttr = "followee_handle";
+//    private static final String FollowerNameAttr = "follower_name";
+//    private static final String FolloweeNameAttr = "followee_name";
+
+    private final DynamoDbTable<Follower> table = getClient().table(TableName, TableSchema.fromBean(Follower.class));
+    private final DynamoDbIndex<Follower> index = getClient().table(TableName, TableSchema.fromBean(Follower.class)).index(IndexName);
+
+
+    private static boolean isNonEmptyString(String value) {
+        return (value != null && value.length() > 0);
     }
 
-    /**
-     * Gets the users from the database that the user specified in the request is following. Uses
-     * information in the request object to limit the number of followees returned and to return the
-     * next set of followees after any that were returned in a previous request. The current
-     * implementation returns generated data and doesn't actually access a database.
-     *
-     * @param request contains information about the user whose followees are to be returned and any
-     *                other information required to satisfy the request.
-     * @return the followees.
-     */
-    public FollowingResponse getFollowees(FollowingRequest request) {
-        // TODO: Generates dummy data. Replace with a real implementation.
-        assert request.getLimit() > 0;
-        assert request.getFollowerAlias() != null;
+    public static void main(String[] args) {
+        DynamoFollowDAO followDAO = new DynamoFollowDAO();
+//        for (int i = 0; i < 15; ++i) {
+//            followDAO.addFollower("@AFollowee", "A Followee", "@Rob Boss" + i, "Rob Boss" + i);
+//        }
+//        followDAO.addFollower("@AFollowee", "A Followee", "@stanton", "testfollowing stanton");
+//        Pair<List<String>, Boolean> testresponse = followDAO.getFollowing(new GetFollowRequest(null, "@AFollowee", 10, null));
+//        System.out.println(testresponse.toString());
+        boolean isFollowing = followDAO.isFollower("@AFollowee", "@Rob Boss0");
+        System.out.println(isFollowing);
+    }
 
-        List<User> allFollowees = getDummyUsers();
-        List<User> responseFollowees = new ArrayList<>(request.getLimit());
+    public void addFollower(String followerHandle,  String followerName, String followeeHandle, String followeeName) {
 
-        boolean hasMorePages = false;
+        Key key = Key.builder()
+                .partitionValue(followerHandle).sortValue(followeeHandle)
+                .build();
 
-        if(request.getLimit() > 0) {
-            if (allFollowees != null) {
-                int followeesIndex = getFolloweesStartingIndex(request.getLastFolloweeAlias(), allFollowees);
+        // load it if it exists
+        Follower follower = table.getItem(key);
+        if(follower != null) {
+            System.out.println("Already added this follower");
+        } else {
+            Follower newFollower = new Follower();
+            newFollower.setFollower_handle(followerHandle);
+            newFollower.setFollower_name(followerName);
+            newFollower.setFollowee_handle(followeeHandle);
+            newFollower.setFollowee_name(followeeName);
 
-                for(int limitCounter = 0; followeesIndex < allFollowees.size() && limitCounter < request.getLimit(); followeesIndex++, limitCounter++) {
-                    responseFollowees.add(allFollowees.get(followeesIndex));
+            table.putItem(newFollower);
+        }
+    }
+
+    private Follower getFollower(String followerHandle, String followeeHandle) {
+        Key key = Key.builder()
+                .partitionValue(followerHandle).sortValue(followeeHandle)
+                .build();
+
+        return table.getItem(key);
+    }
+
+    public void deleteFollower(String followerHandle, String followeeHandle) {
+        Key key = Key.builder()
+                .partitionValue(followerHandle).sortValue(followeeHandle)
+                .build();
+
+        table.deleteItem(key);
+    }
+
+//    public void updateFollower(String followerHandle,  String followerName, String followeeHandle, String followeeName) {
+//        Key key = Key.builder()
+//                .partitionValue(followerHandle).sortValue(followeeHandle)
+//                .build();
+//
+//        // load it if it exists
+//        Follower follower = table.getItem(key);
+//        if(follower != null) {
+//            follower.setFollower_name(followerName);
+//            follower.setFollowee_name(followeeName);
+//            table.updateItem(follower);
+//        } else {
+//            System.out.println("This follower does not exit with the aliases provided");
+//        }
+//    }
+
+//    Gets the following for the passed in alias
+    private List<Follower> getAllFollowees(String followerHandle) {
+        Key key = Key.builder()
+                .partitionValue(followerHandle)
+                .build();
+
+        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(key));
+        // If you use iterators, it auto-fetches next page always, so instead limit the stream below
+        //.limit(5);
+
+        QueryEnhancedRequest request = requestBuilder.build();
+
+        return table.query(request)
+                .items()
+                .stream()
+                .collect(Collectors.toList());
+    }
+
+    private List<Follower> getAllFollowers(String followeeHandle) {
+
+        Key key = Key.builder()
+                .partitionValue(followeeHandle)
+                .build();
+
+        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(key));
+        // Unlike Tables, querying from an Index returns a PageIterable, so we want to just ask for
+        // 1 page with pageSize items
+
+
+        QueryEnhancedRequest request = requestBuilder.build();
+
+        List<Follower> followers = new ArrayList<>();
+
+        SdkIterable<Page<Follower>> results2 = index.query(request);
+        PageIterable<Follower> pages = PageIterable.create(results2);
+
+        pages.stream()
+                .forEach(followerPage -> followerPage.items().forEach(v -> followers.add(v)));
+
+        return followers;
+    }
+
+    private List<String> getAliasesFromFollowers (List<Follower> dbFollowers, boolean isFollowers) {
+        List<String> followersAliases = new ArrayList<>();
+        if (dbFollowers != null) {
+            for (Follower dbFollower : dbFollowers) {
+                String followerHandle;
+                if (isFollowers) {
+                    followerHandle = dbFollower.getFollower_handle();
+                }else {
+                    followerHandle = dbFollower.getFollowee_handle();
                 }
-
-                hasMorePages = followeesIndex < allFollowees.size();
+                followersAliases.add(followerHandle);
             }
         }
-
-        return new FollowingResponse(responseFollowees, hasMorePages);
+        return followersAliases;
     }
 
-    /**
-     * Determines the index for the first followee in the specified 'allFollowees' list that should
-     * be returned in the current request. This will be the index of the next followee after the
-     * specified 'lastFollowee'.
-     *
-     * @param lastFolloweeAlias the alias of the last followee that was returned in the previous
-     *                          request or null if there was no previous request.
-     * @param allFollowees the generated list of followees from which we are returning paged results.
-     * @return the index of the first followee to be returned.
-     */
-    private int getFolloweesStartingIndex(String lastFolloweeAlias, List<User> allFollowees) {
+    @Override
+    public Pair<List<String>, Boolean> getFollowers(GetFollowRequest request) {
+        Pair<List<Follower>, Boolean> dbFollowers = getPageItemsFromFollows(request.getFollowerAlias(), request.getLimit(), request.getLastFollowAlias(), true);
+//        Pair<List<Follower>, Boolean> dbFollowers = getPaginatedFollowers(request.getFollowerAlias(), request.getLimit(), request.getLastFollowAlias());
 
-        int followeesIndex = 0;
+        List<String> aliases = getAliasesFromFollowers(dbFollowers.getFirst(), true);
 
-        if(lastFolloweeAlias != null) {
-            // This is a paged request for something after the first page. Find the first item
-            // we should return
-            for (int i = 0; i < allFollowees.size(); i++) {
-                if(lastFolloweeAlias.equals(allFollowees.get(i).getAlias())) {
-                    // We found the index of the last item returned last time. Increment to get
-                    // to the first one we should return
-                    followeesIndex = i + 1;
-                    break;
-                }
+        return new Pair<>(aliases, dbFollowers.getSecond());
+//        List<String> followersAliases = new ArrayList<>();
+//        if (dbFollowers != null) {
+//            for (Follower dbFollower : dbFollowers) {
+//                followersAliases.add(dbFollower.getFollower_handle());
+//            }
+//        }
+//        return followersAliases;
+    }
+
+    @Override
+    public Pair<List<String>, Boolean> getFollowing(GetFollowRequest request) {
+        Pair<List<Follower>, Boolean> dbFollowers = getPageItemsFromFollows(request.getFollowerAlias(), request.getLimit(), request.getLastFollowAlias(), false);
+//        Pair<List<Follower>, Boolean> dbFollowers = getPaginatedFollowees(request.getFollowerAlias(), request.getLimit(), request.getLastFollowAlias());
+
+        List<String> aliases = getAliasesFromFollowers(dbFollowers.getFirst(), false);
+
+        return new Pair<>(aliases, dbFollowers.getSecond());
+//        List<String> followingAliases = new ArrayList<>();
+//        if (dbFollowers != null) {
+//            for (Follower dbFollower : dbFollowers) {
+//                followingAliases.add(dbFollower.getFollowee_handle());
+//            }
+//        }
+//        return followingAliases;
+    }
+
+    @Override
+    public int getFollowersCount(String targetUserAlias) {
+        return getAllFollowers(targetUserAlias).size();
+    }
+
+    @Override
+    public int getFollowingCount(String targetUserAlias) {
+        return getAllFollowees(targetUserAlias).size();
+    }
+
+//    Does curr user follow selected user?
+    @Override
+    public boolean isFollower(String currUserAlias, String selectedUserAlias) {
+        Follower follower = getFollower(currUserAlias, selectedUserAlias);
+        return follower != null;
+    }
+
+    public Pair<List<Follower>, Boolean> getPageItemsFromFollows(String followsHandle, int pageSize, String lastHandle, boolean isFollower) {
+        Key key = Key.builder()
+                .partitionValue(followsHandle)
+                .build();
+
+        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(key))
+                .limit(pageSize);
+        // If you use iterators, it auto-fetches next page always, so instead limit the stream below
+        //.limit(5);
+
+        if(isNonEmptyString(lastHandle)) {
+            // Build up the Exclusive Start Key (telling DynamoDB where you left off reading items)
+            Map<String, AttributeValue> startKey = new HashMap<>();
+            if (isFollower){
+                startKey.put(FolloweeAttr, AttributeValue.builder().s(followsHandle).build());
+                startKey.put(FollowerAttr, AttributeValue.builder().s(lastHandle).build());
+            }else {
+                startKey.put(FollowerAttr, AttributeValue.builder().s(followsHandle).build());
+                startKey.put(FolloweeAttr, AttributeValue.builder().s(lastHandle).build());
             }
+
+            requestBuilder.exclusiveStartKey(startKey);
         }
 
-        return followeesIndex;
-    }
+        QueryEnhancedRequest request = requestBuilder.build();
 
-    /**
-     * Returns the list of dummy followee data. This is written as a separate method to allow
-     * mocking of the followees.
-     *
-     * @return the followees.
-     */
-    List<User> getDummyUsers() {
-        return getFakeData().getFakeUsers();
-    }
-
-    /**
-     * Returns the {@link FakeData} object used to generate dummy followees.
-     * This is written as a separate method to allow mocking of the {@link FakeData}.
-     *
-     * @return a {@link FakeData} instance.
-     */
-    FakeData getFakeData() {
-        return FakeData.getInstance();
-    }
-
-    public FollowersResponse getFollowers(FollowersRequest request) {
-        // TODO: Generates dummy data. Replace with a real implementation.
-        assert request.getLimit() > 0;
-        assert request.getFollowerAlias() != null;
-
-        List<User> allFollowers = getDummyUsers();
-        List<User> responseFollowers = new ArrayList<>(request.getLimit());
-
-        boolean hasMorePages = false;
-
-        if(request.getLimit() > 0) {
-            if (allFollowers != null) {
-                int followersIndex = getFollowersStartingIndex(request.getLastFollowerAlias(), allFollowers);
-
-                for(int limitCounter = 0; followersIndex < allFollowers.size() && limitCounter < request.getLimit(); followersIndex++, limitCounter++) {
-                    responseFollowers.add(allFollowers.get(followersIndex));
-                }
-
-                hasMorePages = followersIndex < allFollowers.size();
-            }
+        PageIterable<Follower> pages;
+        if (isFollower) {
+            SdkIterable<Page<Follower>> response = index.query(request);
+            pages = PageIterable.create(response);
+        }else {
+            PageIterable<Follower> response = table.query(request);
+            pages = PageIterable.create(response);
         }
 
-        return new FollowersResponse(responseFollowers, hasMorePages);
+        List<Follower> followItems = new ArrayList<>();
+
+        pages.stream()
+                .limit(1)
+                .forEach(followerPage -> followerPage.items().forEach(v -> followItems.add(v)));
+
+        boolean hasMorePages = pages.iterator().next().lastEvaluatedKey() != null;
+        return new Pair<>(followItems, hasMorePages);
     }
 
-    private int getFollowersStartingIndex(String lastFollowerAlias, List<User> allFollowers) {
-        int followersIndex = 0;
+//    public Pair<List<Follower>, Boolean> getPaginatedFollowees(String followerHandle, int pageSize, String lastFolloweeHandle) {
+//        Key key = Key.builder()
+//                .partitionValue(followerHandle)
+//                .build();
+//
+//        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+//                .queryConditional(QueryConditional.keyEqualTo(key))
+//                .limit(pageSize);
+//        // If you use iterators, it auto-fetches next page always, so instead limit the stream below
+//        //.limit(5);
+//
+//        if(isNonEmptyString(lastFolloweeHandle)) {
+//            // Build up the Exclusive Start Key (telling DynamoDB where you left off reading items)
+//            Map<String, AttributeValue> startKey = new HashMap<>();
+//            startKey.put(FollowerAttr, AttributeValue.builder().s(followerHandle).build());
+//            startKey.put(FolloweeAttr, AttributeValue.builder().s(lastFolloweeHandle).build());
+//
+//            requestBuilder.exclusiveStartKey(startKey);
+//        }
+//
+//        QueryEnhancedRequest request = requestBuilder.build();
+//
+//        PageIterable<Follower> response = table.query(request);
+//        PageIterable<Follower> pages = PageIterable.create(response);
+//
+//        List<Follower> followees = new ArrayList<>();
+//
+//        pages.stream()
+//                .limit(1)
+//                .forEach(followerPage -> followerPage.items().forEach(v -> followees.add(v)));
+//
+//        boolean hasMorePages = pages.iterator().next().lastEvaluatedKey() != null;
+//        return new Pair<>(followees, hasMorePages);
+//    }
 
-        if(lastFollowerAlias != null) {
-            // This is a paged request for something after the first page. Find the first item
-            // we should return
-            for (int i = 0; i < allFollowers.size(); i++) {
-                if(lastFollowerAlias.equals(allFollowers.get(i).getAlias())) {
-                    // We found the index of the last item returned last time. Increment to get
-                    // to the first one we should return
-                    followersIndex = i + 1;
-                    break;
-                }
-            }
-        }
 
-        return followersIndex;
-    }
+
+//    public Pair<List<Follower>, Boolean> getPaginatedFollowers(String followeeHandle, int pageSize, String lastFollowerHandle) {
+//        Key key = Key.builder()
+//                .partitionValue(followeeHandle)
+//                .build();
+//
+//        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+//                .queryConditional(QueryConditional.keyEqualTo(key))
+//                .limit(pageSize);
+//        // Unlike Tables, querying from an Index returns a PageIterable, so we want to just ask for
+//        // 1 page with pageSize items
+//
+//        if(isNonEmptyString(lastFollowerHandle)) {
+//            // Build up the Exclusive Start Key (telling DynamoDB where you left off reading items)
+//            Map<String, AttributeValue> startKey = new HashMap<>();
+//            startKey.put(FolloweeAttr, AttributeValue.builder().s(followeeHandle).build());
+//            startKey.put(FollowerAttr, AttributeValue.builder().s(lastFollowerHandle).build());
+//
+//            requestBuilder.exclusiveStartKey(startKey);
+//        }
+//
+//        QueryEnhancedRequest request = requestBuilder.build();
+//
+//        List<Follower> followers = new ArrayList<>();
+//
+//        SdkIterable<Page<Follower>> results2 = index.query(request);
+//        PageIterable<Follower> pages = PageIterable.create(results2);
+//        // limit 1 page, with pageSize items
+//        pages.stream()
+//                .limit(1)
+//                .forEach(followerPage -> followerPage.items().forEach(v -> followers.add(v)));
+//
+//        boolean hasMorePages = pages.iterator().next().lastEvaluatedKey() != null;
+//        return new Pair<>(followers, hasMorePages);
+//    }
 }

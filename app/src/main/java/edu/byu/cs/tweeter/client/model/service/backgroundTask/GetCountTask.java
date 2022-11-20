@@ -8,10 +8,7 @@ import java.io.IOException;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
-import edu.byu.cs.tweeter.model.net.request.IsFollowerRequest;
-import edu.byu.cs.tweeter.model.net.response.AuthenticateResponse;
 import edu.byu.cs.tweeter.model.net.response.CountResponse;
-import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
 
 public abstract class GetCountTask extends AuthenticatedTask {
 

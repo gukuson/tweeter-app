@@ -9,19 +9,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import edu.byu.cs.tweeter.client.model.net.ServerFacade;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.PagedTask;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.RegisterTask;
 import edu.byu.cs.tweeter.client.model.service.observer.PagedTaskObserver;
-import edu.byu.cs.tweeter.client.presenter.PagedPresenter;
-import edu.byu.cs.tweeter.client.presenter.StoryPresenter;
-import edu.byu.cs.tweeter.client.view.main.story.StoryFragment;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
-import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
-import edu.byu.cs.tweeter.model.net.response.AuthenticateResponse;
 import edu.byu.cs.tweeter.util.FakeData;
 
 public class StatusServiceTest {

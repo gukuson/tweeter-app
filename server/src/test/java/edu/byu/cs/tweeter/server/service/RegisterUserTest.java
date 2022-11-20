@@ -4,12 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
 import edu.byu.cs.tweeter.model.net.response.AuthenticateResponse;
 import edu.byu.cs.tweeter.server.dao.DynamoDAOFactory;
-import edu.byu.cs.tweeter.server.service.UserService;
 
 public class RegisterUserTest {
     private UserService userService;

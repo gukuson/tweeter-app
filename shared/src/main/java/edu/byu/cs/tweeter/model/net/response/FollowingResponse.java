@@ -4,14 +4,27 @@ import java.util.List;
 import java.util.Objects;
 
 import edu.byu.cs.tweeter.model.domain.User;
-import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
 
-/**
- * A paged response for a {@link FollowingRequest}.
- */
 public class FollowingResponse extends PagedResponse<User> {
 
     private List<User> followees;
+
+    /**
+     * Returns the followees for the corresponding request.
+     *
+     * @return the followees.
+     */
+    public List<User> getFollowees() {
+        return followees;
+    }
+
+    public void setFollowees(List<User> followees) {
+        this.followees = followees;
+    }
+
+    public FollowingResponse(){
+        super();
+    };
 
     /**
      * Creates a response indicating that the corresponding request was unsuccessful. Sets the
@@ -31,16 +44,9 @@ public class FollowingResponse extends PagedResponse<User> {
      */
     public FollowingResponse(List<User> followees, boolean hasMorePages) {
         super(true, hasMorePages, followees);
+        this.followees = followees;
     }
 
-    /**
-     * Returns the followees for the corresponding request.
-     *
-     * @return the followees.
-     */
-    public List<User> getFollowees() {
-        return followees;
-    }
 
     @Override
     public boolean equals(Object param) {

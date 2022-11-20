@@ -7,4 +7,5 @@ import edu.byu.cs.tweeter.model.net.response.LoginResponse;
 public interface IUserDAO {
     User registerUser(String username, String password, String firstName, String lastName, String image);
     LoginResponse login(LoginRequest request);
+    User getUser(String alias);
 }
