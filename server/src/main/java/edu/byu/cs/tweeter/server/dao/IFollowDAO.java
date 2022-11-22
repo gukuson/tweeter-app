@@ -12,4 +12,6 @@ public interface IFollowDAO {
     int getFollowingCount(String targetUserAlias);
     boolean isFollower(String currUserAlias, String selectedUserAlias);
     List<String> getAllFollowersAliases(String senderAlias);
+    void addFollower(String currentUserAlias, String aliasToToggleFollow);
+    void removeFollower(String currentUserAlias, String aliasToToggleFollow);
 }

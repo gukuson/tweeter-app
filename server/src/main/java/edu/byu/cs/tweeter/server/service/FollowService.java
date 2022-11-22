@@ -18,6 +18,7 @@ import edu.byu.cs.tweeter.model.net.response.Response;
 import edu.byu.cs.tweeter.server.dao.DAOFactory;
 import edu.byu.cs.tweeter.server.dao.DynamoDAOFactory;
 import edu.byu.cs.tweeter.server.dao.FollowDAO;
+import edu.byu.cs.tweeter.server.dao.IAuthtokenDAO;
 import edu.byu.cs.tweeter.server.dao.IFollowDAO;
 import edu.byu.cs.tweeter.server.dao.IUserDAO;
 import edu.byu.cs.tweeter.util.Pair;
@@ -29,11 +30,13 @@ public class FollowService extends Service{
 
     IFollowDAO followDAO;
     IUserDAO userDAO;
+    IAuthtokenDAO authtokenDAO;
 
     public FollowService(DAOFactory daoFactory) {
         super(daoFactory);
         followDAO = daoFactory.getFollowDao();
         userDAO = daoFactory.getUserDao();
+        authtokenDAO = daoFactory.getAuthtokenDao();
     }
 
 
@@ -99,27 +102,35 @@ public class FollowService extends Service{
         return new FollowersResponse(responseFollowers.getFirst(), responseFollowers.getSecond());
     }
 
-//    When unfollow need to update count for current user's following, person unfollowed followers
-    public Response unfollow(FollowToggleRequest request) {
+    public Response toggleFollow(FollowToggleRequest request, boolean shouldFollow) {
         if(request.getAliasToToggleFollow() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have an alias to unfollow");
         }else if(request.getAuthToken() == null) {
             throw new RuntimeException("[Bad Request] Request to unfollow needs to have an authtoken");
         }
+        if (! isValidAuthtoken(request.getAuthToken().getDatetime())) {
+            throw new RuntimeException("[Bad Request] Expired authtoken");
+        }
+        String currentUserAlias = authtokenDAO.getAlias(request.getAuthToken());
+
+        if (shouldFollow) {
+            followDAO.addFollower(currentUserAlias, request.getAliasToToggleFollow());
+        }else {
+            followDAO.removeFollower(currentUserAlias, request.getAliasToToggleFollow());
+        }
 
         return new Response(true);
+    }
+
+//    When unfollow need to update count for current user's following, person unfollowed followers
+    public Response unfollow(FollowToggleRequest request) {
+        return toggleFollow(request, false);
     }
 
 
     //    When follow need to update count for current user's following, person followed followers
     public Response follow(FollowToggleRequest request) {
-        if(request.getAliasToToggleFollow() == null) {
-            throw new RuntimeException("[Bad Request] Request needs to have an alias to follow");
-        }else if(request.getAuthToken() == null) {
-            throw new RuntimeException("[Bad Request] Request to follow needs to have an authtoken");
-        }
-
-        return new Response(true);
+        return toggleFollow(request, true);
     }
 
 
@@ -146,7 +157,6 @@ public class FollowService extends Service{
         }else if(request.getAuthToken() == null) {
             throw new RuntimeException("[Bad Request] Request to check followers/following count needs to have an authtoken");
         }
-
         if (! isValidAuthtoken(request.getAuthToken().getDatetime())) {
             throw new RuntimeException("[Bad Request] Expired authtoken");
         }

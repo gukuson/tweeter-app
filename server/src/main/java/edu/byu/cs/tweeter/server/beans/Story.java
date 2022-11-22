@@ -19,6 +19,7 @@ public class Story {
     private String date;
     private String firstname;
     private String lastname;
+
     private String imageURL;
     private String post;
     /**

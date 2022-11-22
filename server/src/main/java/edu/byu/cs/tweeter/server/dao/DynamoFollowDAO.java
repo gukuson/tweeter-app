@@ -42,11 +42,13 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
 //        followDAO.addFollower("@AFollowee", "A Followee", "@stanton", "testfollowing stanton");
 //        Pair<List<String>, Boolean> testresponse = followDAO.getFollowing(new GetFollowRequest(null, "@AFollowee", 10, null));
 //        System.out.println(testresponse.toString());
-        boolean isFollowing = followDAO.isFollower("@AFollowee", "@Rob Boss0");
-        System.out.println(isFollowing);
+//        boolean isFollowing = followDAO.isFollower("@AFollowee", "@Rob Boss0");
+//        System.out.println(isFollowing);
+        followDAO.removeFollower("@AFollowee","@Rob Boss0");
     }
 
-    public void addFollower(String followerHandle,  String followerName, String followeeHandle, String followeeName) {
+    @Override
+    public void addFollower(String followerHandle, String followeeHandle) {
 
         Key key = Key.builder()
                 .partitionValue(followerHandle).sortValue(followeeHandle)
@@ -59,12 +61,19 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
         } else {
             Follower newFollower = new Follower();
             newFollower.setFollower_handle(followerHandle);
-            newFollower.setFollower_name(followerName);
             newFollower.setFollowee_handle(followeeHandle);
-            newFollower.setFollowee_name(followeeName);
 
             table.putItem(newFollower);
         }
+    }
+
+    @Override
+    public void removeFollower(String followerHandle, String followeeHandle) {
+        Key key = Key.builder()
+                .partitionValue(followerHandle).sortValue(followeeHandle)
+                .build();
+
+        table.deleteItem(key);
     }
 
     private Follower getFollower(String followerHandle, String followeeHandle) {
@@ -75,13 +84,6 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
         return table.getItem(key);
     }
 
-    public void deleteFollower(String followerHandle, String followeeHandle) {
-        Key key = Key.builder()
-                .partitionValue(followerHandle).sortValue(followeeHandle)
-                .build();
-
-        table.deleteItem(key);
-    }
 
 //    public void updateFollower(String followerHandle,  String followerName, String followeeHandle, String followeeName) {
 //        Key key = Key.builder()
@@ -104,7 +106,7 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
         return getAliasesFromFollowers(dbFollowers, true);
     }
 
-//    Gets all the following for the passed in alias
+    //    Gets all the following for the passed in alias
     private List<Follower> getAllFollowees(String followerHandle) {
         Key key = Key.builder()
                 .partitionValue(followerHandle)
@@ -167,35 +169,21 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
     @Override
     public Pair<List<String>, Boolean> getFollowers(GetFollowRequest request) {
         Pair<List<Follower>, Boolean> dbFollowers = getPageItemsFromFollows(request.getFollowerAlias(), request.getLimit(), request.getLastFollowAlias(), true);
-//        Pair<List<Follower>, Boolean> dbFollowers = getPaginatedFollowers(request.getFollowerAlias(), request.getLimit(), request.getLastFollowAlias());
 
         List<String> aliases = getAliasesFromFollowers(dbFollowers.getFirst(), true);
 
         return new Pair<>(aliases, dbFollowers.getSecond());
-//        List<String> followersAliases = new ArrayList<>();
-//        if (dbFollowers != null) {
-//            for (Follower dbFollower : dbFollowers) {
-//                followersAliases.add(dbFollower.getFollower_handle());
-//            }
-//        }
-//        return followersAliases;
+
     }
 
     @Override
     public Pair<List<String>, Boolean> getFollowing(GetFollowRequest request) {
         Pair<List<Follower>, Boolean> dbFollowers = getPageItemsFromFollows(request.getFollowerAlias(), request.getLimit(), request.getLastFollowAlias(), false);
-//        Pair<List<Follower>, Boolean> dbFollowers = getPaginatedFollowees(request.getFollowerAlias(), request.getLimit(), request.getLastFollowAlias());
 
         List<String> aliases = getAliasesFromFollowers(dbFollowers.getFirst(), false);
 
         return new Pair<>(aliases, dbFollowers.getSecond());
-//        List<String> followingAliases = new ArrayList<>();
-//        if (dbFollowers != null) {
-//            for (Follower dbFollower : dbFollowers) {
-//                followingAliases.add(dbFollower.getFollowee_handle());
-//            }
-//        }
-//        return followingAliases;
+
     }
 
     @Override

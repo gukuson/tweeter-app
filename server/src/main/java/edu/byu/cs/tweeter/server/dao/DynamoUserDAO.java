@@ -21,6 +21,8 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 public class DynamoUserDAO extends DynamoDAO implements IUserDAO{
     private static final String TableName = "user";
 
+//    private static final String UserAlias = "user_alias";
+
     private final DynamoDbTable<User> table = getClient().table(TableName, TableSchema.fromBean(User.class));
 
 //    Finds user in database via alias, returns null if not in db

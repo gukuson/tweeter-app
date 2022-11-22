@@ -6,19 +6,17 @@ import edu.byu.cs.tweeter.model.domain.AuthToken;
  * Contains all the information needed to make a request to have the server return the next page of
  * followers for a specified user.
  */
-public class StoryRequest {
+public class StatusesRequest {
 
     private AuthToken authToken;
     private String followerAlias;
     private int limit;
     private Long lastTimestamp;
-//    private String lastStatusUserAlias;
-//    private String date;
 
     /**
      * Allows construction of the object from Json. Private so it won't be called in normal code.
      */
-    public StoryRequest() {}
+    public StatusesRequest() {}
 
     /**
      * Creates an instance.
@@ -29,7 +27,7 @@ public class StoryRequest {
      *                     there was no previous request or if no statuses were returned in the
      *                     previous request).
      */
-//    public StoryRequest(AuthToken authToken, String followerAlias, int limit, String lastStatusUserAlias, String date) {
+//    public StatusesRequest(AuthToken authToken, String followerAlias, int limit, String lastStatusUserAlias, String date) {
 //        this.authToken = authToken;
 //        this.followerAlias = followerAlias;
 //        this.limit = limit;
@@ -38,7 +36,7 @@ public class StoryRequest {
 //    }
 
 
-    public StoryRequest(AuthToken authToken, String followerAlias, int limit, Long timestamp) {
+    public StatusesRequest(AuthToken authToken, String followerAlias, int limit, Long timestamp) {
         this.authToken = authToken;
         this.followerAlias = followerAlias;
         this.limit = limit;
@@ -98,23 +96,6 @@ public class StoryRequest {
     public void setLimit(int limit) {
         this.limit = limit;
     }
-
-//    public String getLastStatusUserAlias() {
-//        return lastStatusUserAlias;
-//    }
-//
-//    public void setLastStatusUserAlias(String lastStatusUserAlias) {
-//        this.lastStatusUserAlias = lastStatusUserAlias;
-//    }
-//
-//    public String getDate() {
-//        return date;
-//    }
-//
-//    public void setDate(String date) {
-//        this.date = date;
-//    }
-
 
     public Long getLastTimestamp() {
         return lastTimestamp;

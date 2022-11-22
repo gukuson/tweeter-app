@@ -9,7 +9,7 @@ import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
-import edu.byu.cs.tweeter.model.net.request.StoryRequest;
+import edu.byu.cs.tweeter.model.net.request.StatusesRequest;
 import edu.byu.cs.tweeter.model.net.response.PagedResponse;
 
 /**
@@ -37,7 +37,7 @@ public class GetStoryTask extends PagedTask<Status> {
 //        String lastStatusUserAlias = getLastItem() == null ? null : getLastItem().getUser().getAlias();
 //        String date = getLastItem() == null ? null : getLastItem().getDate();
 
-        StoryRequest request = new StoryRequest(getAuthToken(), targetUserAlias, getLimit(), timestamp);
+        StatusesRequest request = new StatusesRequest(getAuthToken(), targetUserAlias, getLimit(), timestamp);
         return getServerFacade().getStory(request, URL_PATH);
     }
 

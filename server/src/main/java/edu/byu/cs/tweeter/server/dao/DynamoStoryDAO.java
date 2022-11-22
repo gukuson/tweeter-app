@@ -26,7 +26,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class DynamoStoryDAO extends DynamoDAO implements IStoryDAO{
+public class DynamoStoryDAO extends DynamoStatusDAO<Story> implements IStoryDAO{
     private static final String TableName = "story";
 
     private static final String SenderAliasAttribute = "sender_alias";
@@ -35,14 +35,14 @@ public class DynamoStoryDAO extends DynamoDAO implements IStoryDAO{
     private final DynamoDbTable<Story> table = getClient().table(TableName, TableSchema.fromBean(Story.class));
 
 
-    public static void main(String[] args) throws ParseException {
+    public static void main(String[] args) {
 //        List<String> testUrls = new ArrayList<>();
 //        testUrls.add("https.//dksfj");
 //        new DynamoStoryDAO().addPostToStory(new Status("post", new User("stanton", "anthony", "@AFollowee", "imageURL"), "date pretty", testUrls, null), System.currentTimeMillis());
 //        new DynamoStoryDAO().getStory("@AFollowee");
-        long timestamp = 1669080805483L;
-        Pair<List<Status>, Boolean> result = new DynamoStoryDAO().getPagedStory("@AFollowee", 10, null);
-        System.out.println(result.toString());
+//        long timestamp = 1669080805483L;
+//        Pair<List<Status>, Boolean> result = new DynamoStoryDAO().getPagedStory("@AFollowee", 10, null);
+//        System.out.println(result.toString());
 
     }
 
@@ -55,7 +55,7 @@ public class DynamoStoryDAO extends DynamoDAO implements IStoryDAO{
         table.putItem(newStory);
     }
 
-    @Override
+
     public List<Status> getStory(String currAlias) {
         Key key = Key.builder()
                 .partitionValue(currAlias)
@@ -72,52 +72,25 @@ public class DynamoStoryDAO extends DynamoDAO implements IStoryDAO{
                 .stream()
                 .collect(Collectors.toList());
 
-        return getStatusesFromStoryItems(dbStatuses);
+        return getStatusesFromStatusItems(dbStatuses);
+    }
+
+
+    @Override
+    protected String getPartitionKey() {
+        return SenderAliasAttribute;
     }
 
     @Override
-    public Pair<List<Status>, Boolean> getPagedStory(String currHandle, int pageSize, Long timestamp) {
-        Key key = Key.builder()
-                .partitionValue(currHandle)
-                .build();
-
-        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
-                .queryConditional(QueryConditional.keyEqualTo(key))
-                .scanIndexForward(false)
-                .limit(pageSize);
-        // If you use iterators, it auto-fetches next page always, so instead limit the stream below
-        //.limit(5);
-
-        if (timestamp != null) {
-            // Build up the Exclusive Start Key (telling DynamoDB where you left off reading items)
-            Map<String, AttributeValue> startKey = new HashMap<>();
-            startKey.put(SenderAliasAttribute, AttributeValue.builder().s(currHandle).build());
-            startKey.put(TimestampAttribute, AttributeValue.builder().n(timestamp.toString()).build());
-
-            requestBuilder.exclusiveStartKey(startKey);
-        }
-
-        QueryEnhancedRequest request = requestBuilder.build();
-
-        PageIterable<Story> response = table.query(request);
-        PageIterable<Story> pages = PageIterable.create(response);
-
-        List<Story> storyItems = new ArrayList<>();
-
-        pages.stream()
-                .limit(1)
-                .forEach(followerPage -> followerPage.items().forEach(v -> storyItems.add(v)));
-
-        List<Status> storyStatuses = getStatusesFromStoryItems(storyItems);
-
-        boolean hasMorePages = pages.iterator().next().lastEvaluatedKey() != null;
-        return new Pair<>(storyStatuses, hasMorePages);
+    protected DynamoDbTable<Story> getTable() {
+        return table;
     }
 
-    private List<Status> getStatusesFromStoryItems(List<Story> storyItems) {
+    @Override
+    protected List<Status> getStatusesFromStatusItems(List<Story> statusItems) {
         List<Status> storyStatuses = new ArrayList<>();
 
-        for (Story dbStatus : storyItems) {
+        for (Story dbStatus : statusItems) {
             Status newStatus = new Status(dbStatus.getPost(), new User(dbStatus.getFirstname(), dbStatus.getLastname(), dbStatus.getSender_alias(),
                     dbStatus.getImageURL()), dbStatus.getTimestamp(), dbStatus.getDate(), dbStatus.getUrls(), dbStatus.getMentions());
             storyStatuses.add(newStatus);
@@ -125,5 +98,4 @@ public class DynamoStoryDAO extends DynamoDAO implements IStoryDAO{
 
         return storyStatuses;
     }
-
 }
