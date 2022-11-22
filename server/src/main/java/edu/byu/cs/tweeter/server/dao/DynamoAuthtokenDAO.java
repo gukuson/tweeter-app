@@ -42,5 +42,14 @@ public class DynamoAuthtokenDAO extends DynamoDAO implements IAuthtokenDAO{
         table.deleteItem(key);
     }
 
+    @Override
+    public String getAlias(AuthToken authToken) {
+        Key key = Key.builder()
+                .partitionValue(authToken.token)
+                .build();
+
+        return table.getItem(key).getUser_alias();
+    }
+
 
 }

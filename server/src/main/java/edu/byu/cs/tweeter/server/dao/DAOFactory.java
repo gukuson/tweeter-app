@@ -4,4 +4,6 @@ public interface DAOFactory {
     IFollowDAO getFollowDao();
     IUserDAO getUserDao();
     IAuthtokenDAO getAuthtokenDao();
+    IFeedDAO getFeedDao();
+    IStoryDAO getStoryDao();
 }

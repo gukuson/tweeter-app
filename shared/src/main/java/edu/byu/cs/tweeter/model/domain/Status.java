@@ -1,6 +1,7 @@
 package edu.byu.cs.tweeter.model.domain;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -16,6 +17,9 @@ public class Status implements Serializable {
      * User who sent the status.
      */
     public User user;
+
+
+    public long timestamp;
     /**
      * String representation of the date/time at which the status was sent.
      */
@@ -23,18 +27,19 @@ public class Status implements Serializable {
     /**
      * URLs contained in the post text.
      */
-    public List<String> urls;
+    public List<String> urls = new ArrayList<>();
     /**
      * User mentions contained in the post text.
      */
-    public List<String> mentions;
+    public List<String> mentions = new ArrayList<>();
 
     public Status() {
     }
 
-    public Status(String post, User user, String datetime, List<String> urls, List<String> mentions) {
+    public Status(String post, User user, long currentTimeMillis, String datetime, List<String> urls, List<String> mentions) {
         this.post = post;
         this.user = user;
+        this.timestamp = currentTimeMillis;
         this.datetime = datetime;
         this.urls = urls;
         this.mentions = mentions;
@@ -62,6 +67,14 @@ public class Status implements Serializable {
 
     public List<String> getMentions() {
         return mentions;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     @Override

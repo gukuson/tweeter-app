@@ -15,4 +15,14 @@ public class DynamoDAOFactory implements DAOFactory{
     public IAuthtokenDAO getAuthtokenDao() {
         return new DynamoAuthtokenDAO();
     }
+
+    @Override
+    public IFeedDAO getFeedDao() {
+        return new DynamoFeedDAO();
+    }
+
+    @Override
+    public IStoryDAO getStoryDao() {
+        return new DynamoStoryDAO();
+    }
 }

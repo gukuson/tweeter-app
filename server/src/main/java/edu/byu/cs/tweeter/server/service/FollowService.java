@@ -131,9 +131,9 @@ public class FollowService extends Service{
         }else if(request.getSelectedUserAlias() == null) {
             throw new RuntimeException("[Bad Request] Request to have an alias of the user trying to find if they're a follower");
         }
-//        if (! isValidAuthtoken(request.getAuthToken().getDatetime())) {
-//            throw new RuntimeException("[Bad Request] Expired authtoken");
-//        }
+        if (! isValidAuthtoken(request.getAuthToken().getDatetime())) {
+            throw new RuntimeException("[Bad Request] Expired authtoken");
+        }
 
         boolean isFollower = followDAO.isFollower(request.getCurrUserAlias(), request.getSelectedUserAlias());
         System.out.println(request.getCurrUserAlias() + " " + isFollower + " follows " + request.getSelectedUserAlias());

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import edu.byu.cs.tweeter.model.net.TweeterRemoteException;
 import edu.byu.cs.tweeter.model.net.request.CountRequest;
+import edu.byu.cs.tweeter.model.net.request.FeedRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowToggleRequest;
 import edu.byu.cs.tweeter.model.net.request.GetFollowRequest;
 import edu.byu.cs.tweeter.model.net.request.GetUserRequest;
@@ -77,7 +78,7 @@ public class ServerFacade {
         return clientCommunicator.doPost(urlPath, request, null, StoryResponse.class);
     }
 
-    public FeedResponse getFeed(StoryRequest request, String urlPath) throws IOException, TweeterRemoteException {
+    public FeedResponse getFeed(FeedRequest request, String urlPath) throws IOException, TweeterRemoteException {
         return clientCommunicator.doPost(urlPath, request, null, FeedResponse.class);
     }
 

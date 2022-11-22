@@ -10,11 +10,27 @@ import edu.byu.cs.tweeter.model.net.request.StoryRequest;
 import edu.byu.cs.tweeter.model.net.response.FeedResponse;
 import edu.byu.cs.tweeter.model.net.response.Response;
 import edu.byu.cs.tweeter.model.net.response.StoryResponse;
+import edu.byu.cs.tweeter.server.dao.DAOFactory;
+import edu.byu.cs.tweeter.server.dao.IAuthtokenDAO;
+import edu.byu.cs.tweeter.server.dao.IFeedDAO;
+import edu.byu.cs.tweeter.server.dao.IFollowDAO;
+import edu.byu.cs.tweeter.server.dao.IStoryDAO;
 import edu.byu.cs.tweeter.util.FakeData;
 import edu.byu.cs.tweeter.util.Pair;
 
-public class StatusService {
+public class StatusService extends Service{
+    IFollowDAO followDAO;
+    IFeedDAO feedDao;
+    IStoryDAO storyDAO;
+    IAuthtokenDAO authtokenDAO;
 
+    public StatusService(DAOFactory daoFactory) {
+        super(daoFactory);
+        followDAO = daoFactory.getFollowDao();
+        feedDao = daoFactory.getFeedDao();
+        storyDAO = daoFactory.getStoryDao();
+        authtokenDAO = daoFactory.getAuthtokenDao();
+    }
 
     public Response postStatus(PostStatusRequest request) {
         if(request.getNewStatus() == null) {
@@ -22,6 +38,20 @@ public class StatusService {
         } else if (request.getAuthToken() == null) {
             throw new RuntimeException("[Bad Request] Request to post status needs to have a an authtoken");
         }
+        if (! isValidAuthtoken(request.getAuthToken().getDatetime())) {
+            throw new RuntimeException("[Bad Request] Expired authtoken");
+        }
+
+//        long currentMillis = System.currentTimeMillis();
+        storyDAO.addPostToStory(request.getNewStatus());
+
+//        String senderAlias = request.getNewStatus().getUser().getAlias();
+//        List<String> allFollowersOfSender = followDAO.getAllFollowersAliases(senderAlias);
+//
+//        for (String followerAlias : allFollowersOfSender) {
+//            feedDao.addPostToFeed(followerAlias, request.getNewStatus(), currentMillis);
+//        }
+
         return new Response(true);
     }
 
@@ -33,8 +63,11 @@ public class StatusService {
         }else if (request.getAuthToken() == null) {
             throw new RuntimeException("[Bad Request] Request to get story needs to have a an authtoken");
         }
+        if (! isValidAuthtoken(request.getAuthToken().getDatetime())) {
+            throw new RuntimeException("[Bad Request] Expired authtoken");
+        }
 
-        Pair<List<Status>, Boolean> pagedOfStatuses = getPageOfStatus(request.getLastStatusUserAlias(), request.getDate(), request.getLimit());
+        Pair<List<Status>, Boolean> pagedOfStatuses = storyDAO.getPagedStory(request.getFollowerAlias(), request.getLimit(), request.getLastTimestamp() );
 
         return new StoryResponse(pagedOfStatuses.getFirst(), pagedOfStatuses.getSecond());
     }
@@ -47,6 +80,10 @@ public class StatusService {
         }else if (request.getAuthToken() == null) {
             throw new RuntimeException("[Bad Request] Request to get feed needs to have a an authtoken");
         }
+
+//        if (! isValidAuthtoken(request.getAuthToken().getDatetime())) {
+//            throw new RuntimeException("[Bad Request] Expired authtoken");
+//        }
 
         Pair<List<Status>, Boolean> pagedOfStatuses = getPageOfStatus(request.getLastStatusUserAlias(), request.getDate(), request.getLimit());
 

@@ -11,8 +11,9 @@ public class StoryRequest {
     private AuthToken authToken;
     private String followerAlias;
     private int limit;
-    private String lastStatusUserAlias;
-    private String date;
+    private Long lastTimestamp;
+//    private String lastStatusUserAlias;
+//    private String date;
 
     /**
      * Allows construction of the object from Json. Private so it won't be called in normal code.
@@ -24,16 +25,24 @@ public class StoryRequest {
      *
      * @param followerAlias the alias of the user whose followers are to be returned.
      * @param limit the maximum number of followers to return.
-     * @param lastStatusUserAlias the alias of the user of the last status that was returned in the previous request (null if
+     * @param timestamp the alias of the user of the last status that was returned in the previous request (null if
      *                     there was no previous request or if no statuses were returned in the
      *                     previous request).
      */
-    public StoryRequest(AuthToken authToken, String followerAlias, int limit, String lastStatusUserAlias, String date) {
+//    public StoryRequest(AuthToken authToken, String followerAlias, int limit, String lastStatusUserAlias, String date) {
+//        this.authToken = authToken;
+//        this.followerAlias = followerAlias;
+//        this.limit = limit;
+//        this.lastStatusUserAlias = lastStatusUserAlias;
+//        this.date = date;
+//    }
+
+
+    public StoryRequest(AuthToken authToken, String followerAlias, int limit, Long timestamp) {
         this.authToken = authToken;
         this.followerAlias = followerAlias;
         this.limit = limit;
-        this.lastStatusUserAlias = lastStatusUserAlias;
-        this.date = date;
+        this.lastTimestamp = timestamp;
     }
 
     /**
@@ -90,19 +99,28 @@ public class StoryRequest {
         this.limit = limit;
     }
 
-    public String getLastStatusUserAlias() {
-        return lastStatusUserAlias;
+//    public String getLastStatusUserAlias() {
+//        return lastStatusUserAlias;
+//    }
+//
+//    public void setLastStatusUserAlias(String lastStatusUserAlias) {
+//        this.lastStatusUserAlias = lastStatusUserAlias;
+//    }
+//
+//    public String getDate() {
+//        return date;
+//    }
+//
+//    public void setDate(String date) {
+//        this.date = date;
+//    }
+
+
+    public Long getLastTimestamp() {
+        return lastTimestamp;
     }
 
-    public void setLastStatusUserAlias(String lastStatusUserAlias) {
-        this.lastStatusUserAlias = lastStatusUserAlias;
-    }
-
-    public String getDate() {
-        return date;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
+    public void setLastTimestamp(Long lastTimestamp) {
+        this.lastTimestamp = lastTimestamp;
     }
 }

@@ -33,10 +33,11 @@ public class GetStoryTask extends PagedTask<Status> {
     @Override
     protected PagedResponse<Status> sendRequestToServer() throws IOException, TweeterRemoteException {
         String targetUserAlias = getTargetUser() == null ? null : getTargetUser().getAlias();
-        String lastStatusUserAlias = getLastItem() == null ? null : getLastItem().getUser().getAlias();
-        String date = getLastItem() == null ? null : getLastItem().getDate();
+        Long timestamp = getLastItem() == null ? null : getLastItem().getTimestamp();
+//        String lastStatusUserAlias = getLastItem() == null ? null : getLastItem().getUser().getAlias();
+//        String date = getLastItem() == null ? null : getLastItem().getDate();
 
-        StoryRequest request = new StoryRequest(getAuthToken(), targetUserAlias, getLimit(), lastStatusUserAlias, date);
+        StoryRequest request = new StoryRequest(getAuthToken(), targetUserAlias, getLimit(), timestamp);
         return getServerFacade().getStory(request, URL_PATH);
     }
 

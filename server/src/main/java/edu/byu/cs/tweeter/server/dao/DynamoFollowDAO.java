@@ -34,10 +34,6 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
     private final DynamoDbIndex<Follower> index = getClient().table(TableName, TableSchema.fromBean(Follower.class)).index(IndexName);
 
 
-    private static boolean isNonEmptyString(String value) {
-        return (value != null && value.length() > 0);
-    }
-
     public static void main(String[] args) {
         DynamoFollowDAO followDAO = new DynamoFollowDAO();
 //        for (int i = 0; i < 15; ++i) {
@@ -103,7 +99,12 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
 //        }
 //    }
 
-//    Gets the following for the passed in alias
+    public List<String> getAllFollowersAliases(String followeeHandle) {
+        List<Follower> dbFollowers = getAllFollowers(followeeHandle);
+        return getAliasesFromFollowers(dbFollowers, true);
+    }
+
+//    Gets all the following for the passed in alias
     private List<Follower> getAllFollowees(String followerHandle) {
         Key key = Key.builder()
                 .partitionValue(followerHandle)

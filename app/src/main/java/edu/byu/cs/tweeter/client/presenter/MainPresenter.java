@@ -71,7 +71,7 @@ public class MainPresenter extends Presenter<MainPresenter.MainView> {
     public void makePost(String post) {
         view.displayMessage("Posting Status...");
         try {
-            Status newStatus = new Status(post, Cache.getInstance().getCurrUser(), getFormattedDateTime(), parseURLs(post), parseMentions(post));
+            Status newStatus = new Status(post, Cache.getInstance().getCurrUser(), System.currentTimeMillis() ,getFormattedDateTime(), parseURLs(post), parseMentions(post));
             getStatusService().postStatus(Cache.getInstance().getCurrUserAuthToken(),
                     newStatus, new MakePostObserver());
 
@@ -279,7 +279,9 @@ public class MainPresenter extends Presenter<MainPresenter.MainView> {
         SimpleDateFormat userFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         SimpleDateFormat statusFormat = new SimpleDateFormat("MMM d yyyy h:mm aaa");
 
-        return statusFormat.format(userFormat.parse(LocalDate.now().toString() + " " + LocalTime.now().toString().substring(0, 8)));
+        String result = statusFormat.format(userFormat.parse(LocalDate.now().toString() + " " + LocalTime.now().toString().substring(0, 8)));
+        System.out.println(result);
+        return result;
     }
 
     public List<String> parseURLs(String post) {

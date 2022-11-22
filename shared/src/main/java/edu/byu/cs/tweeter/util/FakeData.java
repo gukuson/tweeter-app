@@ -129,7 +129,7 @@ public class FakeData {
                         "\n" + url;
                 calendar.add(Calendar.MINUTE, 1);
                 String datetime = calendar.getTime().toString();
-                Status status = new Status(post, sender, datetime, urls, mentions);
+                Status status = new Status(post, sender, System.currentTimeMillis(), datetime, urls, mentions);
                 allStatuses.add(status);
             }
         }

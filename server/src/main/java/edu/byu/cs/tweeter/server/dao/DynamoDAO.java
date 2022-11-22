@@ -20,4 +20,8 @@ public class DynamoDAO {
         }
         return client;
     }
+
+    protected static boolean isNonEmptyString(String value) {
+        return (value != null && value.length() > 0);
+    }
 }
