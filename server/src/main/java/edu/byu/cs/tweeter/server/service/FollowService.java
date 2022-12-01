@@ -2,9 +2,7 @@ package edu.byu.cs.tweeter.server.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
-import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.CountRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowToggleRequest;
@@ -16,7 +14,6 @@ import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
 import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
 import edu.byu.cs.tweeter.model.net.response.Response;
 import edu.byu.cs.tweeter.server.dao.DAOFactory;
-import edu.byu.cs.tweeter.server.dao.DynamoDAOFactory;
 import edu.byu.cs.tweeter.server.dao.FollowDAO;
 import edu.byu.cs.tweeter.server.dao.IAuthtokenDAO;
 import edu.byu.cs.tweeter.server.dao.IFollowDAO;
@@ -46,7 +43,7 @@ public class FollowService extends Service{
 //        assert response.isFollower();
     }
 
-    private Pair<List<User>, Boolean> getItems(GetFollowRequest request, boolean isFollowers) {
+    private Pair<List<User>, Boolean> getPagedUsers(GetFollowRequest request, boolean isFollowers) {
         if(request.getFollowerAlias() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a follower alias");
         } else if(request.getLimit() <= 0) {
@@ -93,12 +90,12 @@ public class FollowService extends Service{
      * @return the followees.
      */
     public FollowingResponse getFollowees(GetFollowRequest request) {
-        Pair<List<User>, Boolean> responseFollowees = getItems(request, false);
+        Pair<List<User>, Boolean> responseFollowees = getPagedUsers(request, false);
         return new FollowingResponse(responseFollowees.getFirst(), responseFollowees.getSecond());
     }
 
     public FollowersResponse getFollowers(GetFollowRequest request) {
-        Pair<List<User>, Boolean> responseFollowers = getItems(request, true);
+        Pair<List<User>, Boolean> responseFollowers = getPagedUsers(request, true);
         return new FollowersResponse(responseFollowers.getFirst(), responseFollowers.getSecond());
     }
 
@@ -164,7 +161,6 @@ public class FollowService extends Service{
 
     public CountResponse getFollowersCount(CountRequest request) {
         validateCountRequest(request);
-//        Hardcoded followers count
         int numFollowers = followDAO.getFollowersCount(request.getTargetUserAlias());
         return new CountResponse(numFollowers);
     }
@@ -172,7 +168,6 @@ public class FollowService extends Service{
     public CountResponse getFollowingCount(CountRequest request) {
         validateCountRequest(request);
         int numFollowing = followDAO.getFollowingCount(request.getTargetUserAlias());
-//        Hardcoded following count
         return new CountResponse(numFollowing);
     }
 

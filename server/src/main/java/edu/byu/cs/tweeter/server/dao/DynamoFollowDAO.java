@@ -27,8 +27,6 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
 
     private static final String FollowerAttr = "follower_handle";
     private static final String FolloweeAttr = "followee_handle";
-//    private static final String FollowerNameAttr = "follower_name";
-//    private static final String FolloweeNameAttr = "followee_name";
 
     private final DynamoDbTable<Follower> table = getClient().table(TableName, TableSchema.fromBean(Follower.class));
     private final DynamoDbIndex<Follower> index = getClient().table(TableName, TableSchema.fromBean(Follower.class)).index(IndexName);
@@ -39,12 +37,12 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
 //        for (int i = 0; i < 15; ++i) {
 //            followDAO.addFollower("@AFollowee", "A Followee", "@Rob Boss" + i, "Rob Boss" + i);
 //        }
-//        followDAO.addFollower("@AFollowee", "A Followee", "@stanton", "testfollowing stanton");
+        followDAO.addFollower("@AFollowee", "@test2");
 //        Pair<List<String>, Boolean> testresponse = followDAO.getFollowing(new GetFollowRequest(null, "@AFollowee", 10, null));
 //        System.out.println(testresponse.toString());
 //        boolean isFollowing = followDAO.isFollower("@AFollowee", "@Rob Boss0");
 //        System.out.println(isFollowing);
-        followDAO.removeFollower("@AFollowee","@Rob Boss0");
+//        followDAO.removeFollower("@AFollowee","@Rob Boss0");
     }
 
     @Override
@@ -101,6 +99,7 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
 //        }
 //    }
 
+    @Override
     public List<String> getAllFollowersAliases(String followeeHandle) {
         List<Follower> dbFollowers = getAllFollowers(followeeHandle);
         return getAliasesFromFollowers(dbFollowers, true);

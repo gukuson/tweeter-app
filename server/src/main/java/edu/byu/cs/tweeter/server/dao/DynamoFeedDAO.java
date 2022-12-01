@@ -1,21 +1,18 @@
 package edu.byu.cs.tweeter.server.dao;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.google.gson.Gson;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.server.beans.FeedItem;
-import edu.byu.cs.tweeter.util.Pair;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class DynamoFeedDAO extends DynamoStatusDAO<FeedItem> implements IFeedDAO{
     private static final String TableName = "feed";
@@ -23,7 +20,12 @@ public class DynamoFeedDAO extends DynamoStatusDAO<FeedItem> implements IFeedDAO
     private static final String ReceiverAliasAttribute = "receiver_alias";
     private static final String TimestampAttribute = "timestamp";
 
+    protected final String JOBSQ_URL = "https://sqs.us-west-2.amazonaws.com/633573532902/JobsQueue";
+
     private final DynamoDbTable<FeedItem> table = getClient().table(TableName, TableSchema.fromBean(FeedItem.class));
+
+    private final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
+    private final Gson gson = new Gson();
 
     public static void main(String[] args) {
 //        IFeedDAO feedDAO = new DynamoFeedDAO();
@@ -44,6 +46,51 @@ public class DynamoFeedDAO extends DynamoStatusDAO<FeedItem> implements IFeedDAO
 
         table.putItem(feedItem);
     }
+
+    @Override
+    public void addFeedBatch(List<String> allFollowersOfSender, Status newStatus) {
+        List<FeedItem> batchToWrite = new ArrayList<>();
+
+
+        long statusTimestamp = newStatus.getTimestamp();
+        String statusDate = newStatus.getDate();
+        String statusFirstName = newStatus.getUser().getFirstName();
+        String statusLastName = newStatus.getUser().getLastName();
+        String statusAlias = newStatus.getUser().getAlias();
+        String statusImage = newStatus.getUser().getImageUrl();
+        String post = newStatus.getPost();
+        List<String> urls = newStatus.getUrls();
+        List<String> mentions = newStatus.getMentions();
+
+        for (String receiverAlias : allFollowersOfSender) {
+            FeedItem feedItem = new FeedItem(receiverAlias, statusTimestamp, statusDate, statusFirstName, statusLastName,
+                    statusAlias, statusImage, post, urls, mentions);
+            batchToWrite.add(feedItem);
+
+            if (batchToWrite.size() == 25) {
+                // serialize this batch up and send to queue to process
+                sendBatchMessage(batchToWrite);
+                batchToWrite = new ArrayList<>();
+            }
+        }
+
+        // write any remaining
+        if (batchToWrite.size() > 0) {
+            // serialize this batch up and send to queue to process
+            sendBatchMessage(batchToWrite);
+        }
+    }
+
+    private void sendBatchMessage(List<FeedItem> batchToWrite) {
+        String batchMessage = gson.toJson(batchToWrite);
+
+        SendMessageRequest send_msg_request = new SendMessageRequest()
+                .withQueueUrl(JOBSQ_URL)
+                .withMessageBody(batchMessage);
+
+        sqs.sendMessage(send_msg_request);
+    }
+
 
     @Override
     protected String getPartitionKey() {

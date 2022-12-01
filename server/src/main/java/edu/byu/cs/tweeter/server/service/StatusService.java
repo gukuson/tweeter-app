@@ -1,35 +1,42 @@
 package edu.byu.cs.tweeter.server.service;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.google.gson.Gson;
+
 import java.util.List;
 
-import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.request.StatusesRequest;
 import edu.byu.cs.tweeter.model.net.response.FeedResponse;
 import edu.byu.cs.tweeter.model.net.response.Response;
 import edu.byu.cs.tweeter.model.net.response.StoryResponse;
+import edu.byu.cs.tweeter.server.beans.PostFeedDTO;
 import edu.byu.cs.tweeter.server.dao.DAOFactory;
 import edu.byu.cs.tweeter.server.dao.IAuthtokenDAO;
 import edu.byu.cs.tweeter.server.dao.IFeedDAO;
 import edu.byu.cs.tweeter.server.dao.IFollowDAO;
 import edu.byu.cs.tweeter.server.dao.IStatusDAO;
 import edu.byu.cs.tweeter.server.dao.IStoryDAO;
-import edu.byu.cs.tweeter.util.FakeData;
 import edu.byu.cs.tweeter.util.Pair;
 
 public class StatusService extends Service{
-    IFollowDAO followDAO;
-    IFeedDAO feedDao;
-    IStoryDAO storyDAO;
-    IAuthtokenDAO authtokenDAO;
+    private final IFollowDAO followDAO;
+    private final IFeedDAO feedDao;
+    private final IStoryDAO storyDAO;
+//    private final IAuthtokenDAO authtokenDAO;
+    private final Gson gson;
+    private final String POSTQ_URL = "https://sqs.us-west-2.amazonaws.com/633573532902/PostQueue";
 
     public StatusService(DAOFactory daoFactory) {
         super(daoFactory);
         followDAO = daoFactory.getFollowDao();
         feedDao = daoFactory.getFeedDao();
         storyDAO = daoFactory.getStoryDao();
-        authtokenDAO = daoFactory.getAuthtokenDao();
+        gson = new Gson();
+//        authtokenDAO = daoFactory.getAuthtokenDao();
     }
 
     public Response postStatus(PostStatusRequest request) {
@@ -42,17 +49,40 @@ public class StatusService extends Service{
             throw new RuntimeException("[Bad Request] Expired authtoken");
         }
 
+//        TODO: Put request into json, add to the PostQ, add to story, then return true
+        String msgString = gson.toJson(request);
+
+        SendMessageRequest send_msg_request = new SendMessageRequest()
+                .withQueueUrl(POSTQ_URL)
+                .withMessageBody(msgString);
+
+        AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
+        sqs.sendMessage(send_msg_request);
+
         storyDAO.addPostToStory(request.getNewStatus());
 
+////        4B This will be in batches
+//        for (String followerAlias : allFollowersOfSender) {
+//            feedDao.addPostToFeed(followerAlias, request.getNewStatus());
+//        }
+
+        return new Response(true);
+    }
+
+    public void addJobsToQueue(PostStatusRequest request) {
         String senderAlias = request.getNewStatus().getUser().getAlias();
         List<String> allFollowersOfSender = followDAO.getAllFollowersAliases(senderAlias);
 
-//        4B This will be in batches
-        for (String followerAlias : allFollowersOfSender) {
-            feedDao.addPostToFeed(followerAlias, request.getNewStatus());
-        }
+        feedDao.addFeedBatch(allFollowersOfSender, request.getNewStatus());
+//        if (allFollowersOfSender.size() > 25) {
+//            for (int i = 0; i < allFollowersOfSender.size(); i += 25) {
+//                List<String> batchedFollowers = allFollowersOfSender.subList(i, i + 25);
+//            }
+//        }else {
+//            PostFeedDTO batchRequest = new PostFeedDTO(request.getNewStatus(), allFollowersOfSender);
+//            gson.toJson(batchRequest);
+//        }
 
-        return new Response(true);
     }
 
     public Pair<List<Status>, Boolean> getPagedStatuses(StatusesRequest request, IStatusDAO statusDAO) {

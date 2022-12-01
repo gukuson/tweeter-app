@@ -62,10 +62,6 @@ public class UserService extends Service{
             response.setAuthToken(authToken);
         }
         return response;
-//        // TODO: Generates dummy data. Replace with a real implementation.
-//        User user = getDummyUser();
-//        AuthToken authToken = getDummyAuthToken();
-//        return new LoginResponse(user, authToken);
     }
 
     public Response logout(LogoutRequest request) {
@@ -102,10 +98,6 @@ public class UserService extends Service{
             AuthToken authToken = authtokenDAO.createAuthtoken(request.getUsername());
             return new AuthenticateResponse(user, authToken);
         }
-        // TODO: Generates dummy data. Replace with a real implementation.
-//        User user = getDummyUser();
-//        AuthToken authToken = getDummyAuthToken();
-//        return new AuthenticateResponse(user, authToken);
     }
 
 
@@ -127,21 +119,6 @@ public class UserService extends Service{
         }else {
             throw new RuntimeException("[Bad Request] Authtoken expired");
         }
-//        User clickedUser = getFakeData().findUserByAlias(request.getClickedAlias());
-//        return new GetUserResponse(clickedUser);
     }
-
-
-//    /**
-//     * Returns the {@link FakeData} object used to generate dummy users and auth tokens.
-//     * This is written as a separate method to allow mocking of the {@link FakeData}.
-//     *
-//     * @return a {@link FakeData} instance.
-//     */
-//    FakeData getFakeData() {
-//        return FakeData.getInstance();
-//    }
-
-
 
 }

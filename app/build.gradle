@@ -33,6 +33,11 @@ android {
             useJUnitPlatform()
         }
     }
+
+    packagingOptions {
+        resources.excludes.add("META-INF/DEPENDENCIES")
+    }
+
     namespace 'edu.byu.cs.client'
 }
 
@@ -49,6 +54,7 @@ dependencies {
 
     // Image management
     implementation 'com.squareup.picasso:picasso:2.71828'
+    implementation 'com.amazonaws:aws-java-sdk-sqs:1.12.352'
 
     /**
      * Testing related dependencies
