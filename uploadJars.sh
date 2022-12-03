@@ -14,6 +14,8 @@ arr=(
 	"getFeed"
 	"isFollower"
 	"getUser"
+	"followerFetcher"
+	"processFeedBatches"
     )
 for FUNCTION_NAME in "${arr[@]}"
 do

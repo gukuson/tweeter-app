@@ -14,4 +14,5 @@ public interface IFollowDAO {
     List<String> getAllFollowersAliases(String senderAlias);
     void addFollower(String currentUserAlias, String aliasToToggleFollow);
     void removeFollower(String currentUserAlias, String aliasToToggleFollow);
+    void addFollowersBatch(List<String> followers, String followTarget);
 }

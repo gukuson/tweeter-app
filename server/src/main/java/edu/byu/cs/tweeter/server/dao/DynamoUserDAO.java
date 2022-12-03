@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Base64;
+import java.util.List;
 import java.util.Objects;
 
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
@@ -17,6 +18,7 @@ import edu.byu.cs.tweeter.server.beans.User;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 
 public class DynamoUserDAO extends DynamoDAO implements IUserDAO{
     private static final String TableName = "user";
@@ -24,6 +26,7 @@ public class DynamoUserDAO extends DynamoDAO implements IUserDAO{
 //    private static final String UserAlias = "user_alias";
 
     private final DynamoDbTable<User> table = getClient().table(TableName, TableSchema.fromBean(User.class));
+
 
 //    Finds user in database via alias, returns null if not in db
     private User getUserByUsername(String alias) {
@@ -127,5 +130,24 @@ public class DynamoUserDAO extends DynamoDAO implements IUserDAO{
 //        return new GetUserResponse("Couldn't find user for that clicked alias");
     }
 
+    @Override
+    public void addUserBatch(List<edu.byu.cs.tweeter.model.domain.User> users) {
+        addBatch(users);
+    }
 
+
+    @Override
+    <T, D> T getDTO(D item) {
+        return (T) new User((edu.byu.cs.tweeter.model.domain.User) item);
+    }
+
+    @Override
+    WriteBatch.Builder<User> getWriteBatchBuilder() {
+        return WriteBatch.builder(User.class).mappedTableResource(table);
+    }
+
+    @Override
+    DynamoDbTable<User> getTable() {
+        return table;
+    }
 }

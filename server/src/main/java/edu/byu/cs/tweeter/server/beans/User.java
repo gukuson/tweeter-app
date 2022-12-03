@@ -5,11 +5,22 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 
 @DynamoDbBean
 public class User {
-    private String user_alias;
-    private String password;
     private String firstname;
     private String lastname;
+    private String user_alias;
     private String image_url;
+
+    private String password;
+
+    public User() {
+    }
+
+    public User(edu.byu.cs.tweeter.model.domain.User user) {
+        this.firstname = user.getFirstName();
+        this.lastname = user.getLastName();
+        this.user_alias = user.getAlias();
+        this.image_url = user.getImageUrl();
+    }
 
     @DynamoDbPartitionKey
     public String getUser_alias() {

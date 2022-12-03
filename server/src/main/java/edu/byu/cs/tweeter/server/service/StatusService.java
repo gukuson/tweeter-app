@@ -13,9 +13,7 @@ import edu.byu.cs.tweeter.model.net.request.StatusesRequest;
 import edu.byu.cs.tweeter.model.net.response.FeedResponse;
 import edu.byu.cs.tweeter.model.net.response.Response;
 import edu.byu.cs.tweeter.model.net.response.StoryResponse;
-import edu.byu.cs.tweeter.server.beans.PostFeedDTO;
 import edu.byu.cs.tweeter.server.dao.DAOFactory;
-import edu.byu.cs.tweeter.server.dao.IAuthtokenDAO;
 import edu.byu.cs.tweeter.server.dao.IFeedDAO;
 import edu.byu.cs.tweeter.server.dao.IFollowDAO;
 import edu.byu.cs.tweeter.server.dao.IStatusDAO;
@@ -73,7 +71,7 @@ public class StatusService extends Service{
         String senderAlias = request.getNewStatus().getUser().getAlias();
         List<String> allFollowersOfSender = followDAO.getAllFollowersAliases(senderAlias);
 
-        feedDao.addFeedBatch(allFollowersOfSender, request.getNewStatus());
+        feedDao.createFeedBatches(allFollowersOfSender, request.getNewStatus());
 //        if (allFollowersOfSender.size() > 25) {
 //            for (int i = 0; i < allFollowersOfSender.size(); i += 25) {
 //                List<String> batchedFollowers = allFollowersOfSender.subList(i, i + 25);
@@ -82,6 +80,10 @@ public class StatusService extends Service{
 //            PostFeedDTO batchRequest = new PostFeedDTO(request.getNewStatus(), allFollowersOfSender);
 //            gson.toJson(batchRequest);
 //        }
+
+    }
+
+    public void addFeedBatch(String jsonString) {
 
     }
 
@@ -112,6 +114,5 @@ public class StatusService extends Service{
 
         return new FeedResponse(pagedOfStatuses.getFirst(), pagedOfStatuses.getSecond());
     }
-
 
 }

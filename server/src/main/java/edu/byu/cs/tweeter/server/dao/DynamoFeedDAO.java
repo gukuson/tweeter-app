@@ -4,7 +4,9 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +15,10 @@ import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.server.beans.FeedItem;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteItemEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteResult;
+import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 public class DynamoFeedDAO extends DynamoStatusDAO<FeedItem> implements IFeedDAO{
     private static final String TableName = "feed";
@@ -48,7 +54,7 @@ public class DynamoFeedDAO extends DynamoStatusDAO<FeedItem> implements IFeedDAO
     }
 
     @Override
-    public void addFeedBatch(List<String> allFollowersOfSender, Status newStatus) {
+    public void createFeedBatches(List<String> allFollowersOfSender, Status newStatus) {
         List<FeedItem> batchToWrite = new ArrayList<>();
 
 
@@ -78,6 +84,41 @@ public class DynamoFeedDAO extends DynamoStatusDAO<FeedItem> implements IFeedDAO
         if (batchToWrite.size() > 0) {
             // serialize this batch up and send to queue to process
             sendBatchMessage(batchToWrite);
+        }
+    }
+
+    @Override
+    public void addFeedBatch(String jsonString) {
+        Type feedItemsList = new TypeToken<ArrayList<FeedItem>>() {}.getType();
+        List<FeedItem> feedItems = gson.fromJson(jsonString, feedItemsList);
+
+        writeChunkOfFeedItems(feedItems);
+    }
+
+    private void writeChunkOfFeedItems(List<FeedItem> feedItems) {
+        if(feedItems.size() > 25)
+            throw new RuntimeException("Too many feedItems to write");
+
+        WriteBatch.Builder<FeedItem> writeBuilder = WriteBatch.builder(FeedItem.class).mappedTableResource(table);
+
+        for (FeedItem item : feedItems) {
+            writeBuilder.addPutItem(builder -> builder.item(item));
+        }
+
+        BatchWriteItemEnhancedRequest batchWriteItemEnhancedRequest = BatchWriteItemEnhancedRequest.builder()
+                .writeBatches(writeBuilder.build()).build();
+
+        try {
+            BatchWriteResult result = client.batchWriteItem(batchWriteItemEnhancedRequest);
+
+            // just hammer dynamodb again with anything that didn't get written this time
+            if (result.unprocessedPutItemsForTable(table).size() > 0) {
+                writeChunkOfFeedItems(result.unprocessedPutItemsForTable(table));
+            }
+
+        } catch (DynamoDbException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
         }
     }
 
@@ -113,5 +154,15 @@ public class DynamoFeedDAO extends DynamoStatusDAO<FeedItem> implements IFeedDAO
         }
 
         return feedStatuses;
+    }
+
+    @Override
+    <T, D> T getDTO(D item) {
+        return null;
+    }
+
+    @Override
+    <T> WriteBatch.Builder<T> getWriteBatchBuilder() {
+        return null;
     }
 }

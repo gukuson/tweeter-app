@@ -12,6 +12,7 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 
 public class DynamoStoryDAO extends DynamoStatusDAO<Story> implements IStoryDAO{
     private static final String TableName = "story";
@@ -84,5 +85,15 @@ public class DynamoStoryDAO extends DynamoStatusDAO<Story> implements IStoryDAO{
         }
 
         return storyStatuses;
+    }
+
+    @Override
+    <T, D> T getDTO(D item) {
+        return null;
+    }
+
+    @Override
+    <T> WriteBatch.Builder<T> getWriteBatchBuilder() {
+        return null;
     }
 }

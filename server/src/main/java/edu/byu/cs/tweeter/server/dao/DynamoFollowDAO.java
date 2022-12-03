@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import edu.byu.cs.tweeter.model.net.request.GetFollowRequest;
 import edu.byu.cs.tweeter.server.beans.Follower;
+import edu.byu.cs.tweeter.server.beans.User;
 import edu.byu.cs.tweeter.util.Pair;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
@@ -18,6 +19,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
@@ -31,18 +33,21 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
     private final DynamoDbTable<Follower> table = getClient().table(TableName, TableSchema.fromBean(Follower.class));
     private final DynamoDbIndex<Follower> index = getClient().table(TableName, TableSchema.fromBean(Follower.class)).index(IndexName);
 
+    private String currentFollowTarget;
+
 
     public static void main(String[] args) {
         DynamoFollowDAO followDAO = new DynamoFollowDAO();
 //        for (int i = 0; i < 15; ++i) {
 //            followDAO.addFollower("@AFollowee", "A Followee", "@Rob Boss" + i, "Rob Boss" + i);
 //        }
-        followDAO.addFollower("@AFollowee", "@test2");
+        followDAO.addFollower("@stanton", "@stanton2");
 //        Pair<List<String>, Boolean> testresponse = followDAO.getFollowing(new GetFollowRequest(null, "@AFollowee", 10, null));
 //        System.out.println(testresponse.toString());
 //        boolean isFollowing = followDAO.isFollower("@AFollowee", "@Rob Boss0");
 //        System.out.println(isFollowing);
 //        followDAO.removeFollower("@AFollowee","@Rob Boss0");
+//        System.out.println(followDAO.getFollowersCount("@stanton"));
     }
 
     @Override
@@ -72,6 +77,12 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
                 .build();
 
         table.deleteItem(key);
+    }
+
+    @Override
+    public void addFollowersBatch(List<String> followers, String followTarget) {
+        currentFollowTarget = followTarget;
+        addBatch(followers);
     }
 
     private Follower getFollower(String followerHandle, String followeeHandle) {
@@ -246,6 +257,21 @@ public class DynamoFollowDAO extends DynamoDAO implements IFollowDAO{
 
         boolean hasMorePages = pages.iterator().next().lastEvaluatedKey() != null;
         return new Pair<>(followItems, hasMorePages);
+    }
+
+    @Override
+    <T, D> T getDTO(D item) {
+        return (T) new Follower((String) item, currentFollowTarget);
+    }
+
+    @Override
+    WriteBatch.Builder<Follower> getWriteBatchBuilder() {
+        return WriteBatch.builder(Follower.class).mappedTableResource(table);
+    }
+
+    @Override
+    DynamoDbTable<Follower> getTable() {
+        return table;
     }
 
 //    public Pair<List<Follower>, Boolean> getPaginatedFollowees(String followerHandle, int pageSize, String lastFolloweeHandle) {

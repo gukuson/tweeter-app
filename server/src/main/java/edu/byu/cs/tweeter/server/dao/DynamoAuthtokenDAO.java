@@ -7,6 +7,7 @@ import edu.byu.cs.tweeter.server.beans.Authtoken;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 
 public class DynamoAuthtokenDAO extends DynamoDAO implements IAuthtokenDAO{
     private static final String TableName = "authtoken";
@@ -52,4 +53,18 @@ public class DynamoAuthtokenDAO extends DynamoDAO implements IAuthtokenDAO{
     }
 
 
+    @Override
+    <T, D> T getDTO(D item) {
+        return null;
+    }
+
+    @Override
+    <T> WriteBatch.Builder<T> getWriteBatchBuilder() {
+        return null;
+    }
+
+    @Override
+    <T> DynamoDbTable<T> getTable() {
+        return null;
+    }
 }
